@@ -869,7 +869,14 @@ export type Idol = {
  *
  * - レッスン開始前に生成され、レッスン終了時に破棄される
  */
-type Lesson = {
+export type Lesson = {
+  /** 最終ターン数、この値と同じターン数目の行動で終了、「ターン追加」の効果は含まない */
+  lastTurnNumber: number;
+  /**
+   * スコア
+   *
+   * - 原文では、レッスン時は「パラメータ」、試験・コンテスト時は「スコア」と表記されているもの
+   */
   score: number;
   /** ターン数、最初のターンは1、関連する原文は「{turnNumber}目以降の場合、使用可」 */
   turnNumber: number;

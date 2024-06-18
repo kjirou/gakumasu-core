@@ -16,4 +16,14 @@
 //       - レッスン中に放置するとカードがうっすら光っておすすめカードを教えてくれるが、それがコンテストと同じAIかもしれない
 //         - もしそうだとすると、AIはサーバ側ではなくてクライアント側が計算しているのかもしれない
 
-import {} from "./types";
+import { Lesson } from "./types";
+
+const initializeLesson = (params: {
+  lastTurnNumber: Lesson["lastTurnNumber"];
+}): Lesson => {
+  return {
+    lastTurnNumber: params.lastTurnNumber,
+    score: 0,
+    turnNumber: 1,
+  };
+};
