@@ -17,7 +17,32 @@
 //       - レッスン中に放置するとカードがうっすら光っておすすめカードを教えてくれるが、それがコンテストと同じAIかもしれない
 //         - もしそうだとすると、AIはサーバ側ではなくてクライアント側が計算しているのかもしれない
 
-import { Idol, IdolInProduction, Lesson, LessonGamePlay } from "./types";
+import {
+  GetRandom,
+  Idol,
+  IdolInProduction,
+  Lesson,
+  LessonGamePlay,
+} from "./types";
+
+/**
+ * Shuffle an array with the Fisher–Yates algorithm.
+ *
+ * Ref) https://www.30secondsofcode.org/js/s/shuffle/
+ */
+export const shuffleArray = <Element>(
+  array: Element[],
+  getRandom: GetRandom,
+): Element[] => {
+  const copied = array.slice();
+  let m = copied.length;
+  while (m) {
+    const i = Math.floor(getRandom() * m);
+    m--;
+    [copied[m], copied[i]] = [copied[i], copied[m]];
+  }
+  return copied;
+};
 
 const createIdol = (params: { idolInProduction: IdolInProduction }): Idol => {
   return {
@@ -42,7 +67,22 @@ const createLesson = (params: {
   };
 };
 
-export const createLessonGamePlay = (): LessonGamePlay => {};
+export const createLessonGamePlay = (params: {
+  idolInProduction: IdolInProduction;
+  getRandom?: GetRandom;
+  lastTurnNumber: Lesson["lastTurnNumber"];
+}): LessonGamePlay => {
+  const getRandom = params.getRandom ? params.getRandom : Math.random;
+  // TODO: デッキの生成
+  return {
+    getRandom,
+    initialLesson: createLesson({
+      idolInProduction: params.idolInProduction,
+      lastTurnNumber: params.lastTurnNumber,
+    }),
+    updates: [],
+  };
+};
 
 /**
  * レッスンのターンを開始する
@@ -53,6 +93,7 @@ export const startLessonTurn = (
   lessonGamePlay: LessonGamePlay,
 ): LessonGamePlay => {
   let newLessonGamePlay = lessonGamePlay;
+  // TODO: 手札の抽出
   // TODO: レッスン開始時トリガー
   // TODO: ターン開始時トリガー
   return newLessonGamePlay;

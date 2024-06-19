@@ -1,3 +1,6 @@
+/** Math.random と同じインターフェース */
+export type GetRandom = () => number;
+
 export type RangedNumber =
   | { min: number }
   | { max: number }
@@ -904,6 +907,7 @@ export type LessonUpdateQuery = {};
  * - TODO: 本家の履歴に合わせて差分表現ができるようにする
  */
 export type LessonGamePlay = {
+  getRandom: GetRandom;
   /**
    * 開始時のレッスン
    *
