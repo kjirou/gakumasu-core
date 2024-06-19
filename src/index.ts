@@ -62,10 +62,22 @@ export const startLessonTurn = (
 // const previewCardUsage
 
 /**
+ * レッスンのターンを終了する
+ *
+ * - レッスン終了時に関わる処理は、現在はなさそう
+ */
+const endLessonTurn = (lessonGamePlay: LessonGamePlay): LessonGamePlay => {
+  let newLessonGamePlay = lessonGamePlay;
+  // TODO: ターン終了時トリガー
+  // TODO: 小目標発動
+  return newLessonGamePlay;
+};
+
+/**
  * スキルカードを選択する
  *
  * - スキルカードを選択し、結果のプレビュー表示または使用を行う
- * - TODO: スキルカード使用による状態修正増加時トリガーによる効果も、プレビューに反映されてる？
+ * - TODO: Pアイテムなどによる誘発された効果も、プレビューに反映されてる？
  */
 export const selectCard = (
   lessonGamePlay: LessonGamePlay,
@@ -80,16 +92,13 @@ export const selectCard = (
 };
 
 /**
- * レッスンのターンを終了する
+ * ターンをスキップする
  *
- * - レッスン終了時に関わる処理は、現在はなさそう
+ * - 本家のボタンについているラベルは「Skip」
+ * - プレビューはない
  */
-export const endLessonTurn = (
-  lessonGamePlay: LessonGamePlay,
-): LessonGamePlay => {
+export const skipTurn = (lessonGamePlay: LessonGamePlay): LessonGamePlay => {
   let newLessonGamePlay = lessonGamePlay;
-  // TODO: ターン終了時トリガー
-  // TODO: 小目標発動
   return newLessonGamePlay;
 };
 
@@ -108,7 +117,7 @@ export const endLessonTurn = (
 // };
 //
 // const onPress休憩 = () => {
-//   setState(休憩する(lessonGamePlay));
+//   setState(skipTurn(lessonGamePlay));
 // };
 // ```
 //
