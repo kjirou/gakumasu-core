@@ -614,6 +614,8 @@ export type CardInProduction = {
  * - レッスン開始前に生成され、レッスン終了時に破棄される
  */
 export type Card = {
+  /** カードID、1レッスン内で一意 */
+  id: string;
   original: CardInProduction;
   /**
    * レッスン中の一時的な強化状態
@@ -664,7 +666,7 @@ export type ProducerItemTrigger = (
     }
   | {
       /**
-       * スキルカード使用により状態修正が増加した時
+       * 状態修正が増加した時
        *
        * - 原文の構文は、「{modifierKind}が増加後」
        *   - 「緑のお揃いブレス」は、「好印象が増加後、好印象+3」
@@ -672,10 +674,11 @@ export type ProducerItemTrigger = (
        *   - 「Dearリトルプリンス」は、「好調の効果ターンが増加後、好調3ターン」
        *   - 「放課後のらくがき」は、「集中が増加後体力が50%以上の場合、集中+2」
        *   - 「ひみつ特訓カーデ」は、「やる気が増加後、やる気+3」
-       * - おそらくは、スキルカード使用による状態修正の増加のみを対象としている
+       * - おそらくは、現状は、スキルカード使用による状態修正の増加のみを対象としている
        *   - 少なくとも、状態修正の継続効果による増加は、増加と見做されないよう
        *     - 例えば、「ひみつ特訓カーデ」は、「厳選初星ブレンド」の効果によるやる気増加では発動しない
        *   - TODO: Pアイテムによる増加はトリガーになるのか？相互ループの処理が面倒そうだからなさそうな気はする
+       *   - TODO: Pドリンクによる増加はトリガーになるのか？
        */
       kind: "modifierIncrease";
       modifierKind:
@@ -888,18 +891,82 @@ export type Lesson = {
   turnNumber: number;
 };
 
+type LessonUpdateQueryDiff =
+  | {
+      kind: "life";
+      actual: number;
+      max: number;
+    }
+  | {
+      kind: "score";
+      actual: number;
+      max: number;
+    }
+  | {
+      kind: "turnNumber";
+    }
+  | {
+      kind: "vitality";
+      value: number;
+    };
+
 /**
  * レッスン更新クエリ
  *
- * どういうデータ構造がいいのか？
- * - https://zenn.dev/cbmrham/articles/202404-ts_recursive_diff_lib
- * - https://github.com/cbmrham/recursive-diff
+ * - TODO: レッスン中小目標は「応援」だったよう
+ * - TODO: ゲーム内履歴では、「持続効果」というカテゴリがある
+ * - TODO: ゲーム内履歴のスキルカード使用時トリガーは、スキルカード使用の子として表現されているので、クエリ上は別レコードにするならそれぞれの関連を表現する必要がある
+ * - TODO: ゲーム内履歴に載る差分と載らない差分がある。例えば、好調や好印象の減少は載らない。
  *
- * - lesson に対しての1更新を、patch / unpacth 可能なレコードで表現したもの
+ * - lesson に対しての1更新を、patch 可能なレコードで表現したもの
  * - スキルカード使用・Pアイテム発動・Pアイテム使用・レッスン内小目標などによる、一回のレッスンの状態変化を表現する
- * - UI上は、スキルカード選択時のプレビュー・履歴表示・インタラクションやアニメーションの1単位に利用される
+ * - UI上は、スキルカード選択時のプレビュー・履歴表示・インタラクションやアニメーションに使用される
  */
-export type LessonUpdateQuery = {};
+export type LessonUpdateQuery = (
+  | {
+      /** スキルカード使用 */
+      kind: "cardUsage";
+      cardId: Card["id"];
+    }
+  | {
+      /** スキルカード使用時トリガーにより発動した効果 */
+      kind: "cardUsageTrigger";
+    }
+  | {
+      /** レッスン終了 */
+      kind: "lessonEnd";
+    }
+  | {
+      /** レッスン生成直後 */
+      kind: "lessonInitialization";
+    }
+  | {
+      /** レッスン開始時トリガーにより発動した効果 */
+      kind: "lessonStartTrigger";
+    }
+  | {
+      /** 状態修正増加トリガーにより発動した効果 */
+      kind: "modifierIncreaseTrigger";
+    }
+  | {
+      /**
+       * ターン終了時トリガーにより発動した効果
+       *
+       * - 好調や好印象などのターン経過毎の減少もこれで表現する
+       */
+      kind: "turnEndTrigger";
+    }
+  | {
+      /** ターン数を1増加 */
+      kind: "turnNumberIncrease";
+    }
+  | {
+      /** ターン開始時トリガーにより発動した効果 */
+      kind: "turnStartTrigger";
+    }
+) & {
+  diffs: LessonUpdateQueryDiff[];
+};
 
 /**
  * レッスン中の状態
