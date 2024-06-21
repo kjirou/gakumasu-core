@@ -845,6 +845,7 @@ export type IdolDefinition = {
  * - プロデュース開始時に生成され、プロデュース終了時に破棄される
  */
 export type IdolInProduction = {
+  deck: CardInProduction[];
   definition: IdolDefinition;
   idolParameters: IdolParameters;
   life: number;
@@ -878,9 +879,15 @@ export type Idol = {
  * - レッスン開始前に生成され、レッスン終了時に破棄される
  */
 export type Lesson = {
+  /** 山札、原文でも「山札」 */
+  deck: Card[];
+  /** 捨札、原文でも「捨札」、山札の再生成時に含まれるカード群 */
+  discardPile: Card[];
   idol: Idol;
   /** 最終ターン数、この値と同じターン数目の行動で終了、「ターン追加」の効果は含まない */
   lastTurnNumber: number;
+  /** 除外されたカード、原文は「除外」、山札の再生成時に含まれないカード群 */
+  removedCards: Card[];
   /**
    * スコア
    *
@@ -890,25 +897,6 @@ export type Lesson = {
   /** ターン数、最初のターンは1、関連する原文は「{turnNumber}目以降の場合、使用可」 */
   turnNumber: number;
 };
-
-type LessonUpdateQueryDiff =
-  | {
-      kind: "life";
-      actual: number;
-      max: number;
-    }
-  | {
-      kind: "score";
-      actual: number;
-      max: number;
-    }
-  | {
-      kind: "turnNumber";
-    }
-  | {
-      kind: "vitality";
-      value: number;
-    };
 
 /**
  * レッスン履歴レコード
@@ -1006,6 +994,7 @@ type LessonUpdateQueryReason = (
    * - historyResultIndex 含めて、ゲーム内のレッスン履歴のどこに含まれるかを表現したもの
    * - レッスン履歴を生成する時だけではく、タイムトラベル機能を作るときの程よい区切りにも使う予定
    * - ターン数なので、1から始まる連番
+   *   - 0 から始まり、必ず漏れがない。ターン数増加も1レコードになっているため。
    */
   historyTurnNumber: number;
   /**
@@ -1013,6 +1002,7 @@ type LessonUpdateQueryReason = (
    *
    * - ゲーム内のレッスン履歴内の1ターン内の結果レコードリストの何番目に含まれるかを表現したもの
    * - 1から始まる連番
+   * - 本家ではレッスン履歴へ表示されないものも1レコードとして含まれる。例えば、好調や好印象のターン毎の自然減少。
    */
   historyResultIndex: number;
 };
@@ -1075,9 +1065,7 @@ export type LessonGamePlay = {
    */
   initialLesson: Lesson;
   /**
-   * ターン毎のレッスン更新クエリリスト
-   *
-   * - 0 は、レッスン開始時を意味する
+   * レッスン更新クエリリスト
    */
-  updates: LessonUpdateQuery[][];
+  updates: LessonUpdateQuery[];
 };

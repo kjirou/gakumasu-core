@@ -17,7 +17,10 @@
 //       - レッスン中に放置するとカードがうっすら光っておすすめカードを教えてくれるが、それがコンテストと同じAIかもしれない
 //         - もしそうだとすると、AIはサーバ側ではなくてクライアント側が計算しているのかもしれない
 
+import { create } from "domain";
 import {
+  Card,
+  CardInProduction,
   GetRandom,
   Idol,
   IdolInProduction,
@@ -53,15 +56,32 @@ const createIdol = (params: { idolInProduction: IdolInProduction }): Idol => {
   };
 };
 
+const createCards = (params: { original: CardInProduction[] }): Card[] => {
+  return params.original.map((cardInProduction, index) => {
+    return {
+      id: `${index + 1}`,
+      original: cardInProduction,
+      temporaryEnhancements: [],
+    };
+  });
+};
+
 const createLesson = (params: {
+  getRandom: GetRandom;
   idolInProduction: IdolInProduction;
   lastTurnNumber: Lesson["lastTurnNumber"];
 }): Lesson => {
   return {
+    deck: shuffleArray(
+      createCards({ original: params.idolInProduction.deck }),
+      params.getRandom,
+    ),
+    discardPile: [],
     idol: createIdol({
       idolInProduction: params.idolInProduction,
     }),
     lastTurnNumber: params.lastTurnNumber,
+    removedCards: [],
     score: 0,
     turnNumber: 1,
   };
@@ -73,10 +93,10 @@ export const createLessonGamePlay = (params: {
   lastTurnNumber: Lesson["lastTurnNumber"];
 }): LessonGamePlay => {
   const getRandom = params.getRandom ? params.getRandom : Math.random;
-  // TODO: デッキの生成
   return {
     getRandom,
     initialLesson: createLesson({
+      getRandom,
       idolInProduction: params.idolInProduction,
       lastTurnNumber: params.lastTurnNumber,
     }),
