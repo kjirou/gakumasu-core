@@ -18,6 +18,7 @@
 //       - レッスン中に放置するとカードがうっすら光っておすすめカードを教えてくれるが、それがコンテストと同じAIかもしれない
 //         - もしそうだとすると、AIはサーバ側ではなくてクライアント側が計算しているのかもしれない
 
+import { getIdolDataById } from "./data/idol";
 import {
   Card,
   CardInProduction,
@@ -45,6 +46,16 @@ export const shuffleArray = <Element>(
     [copied[m], copied[i]] = [copied[i], copied[m]];
   }
   return copied;
+};
+
+const createIdolInProduction = (params: {
+  id: string;
+  specificCardEnhanced: boolean;
+  specificProducerItemEnhanced: boolean;
+}): IdolInProduction => {
+  return {
+    definition: getIdolDataById(params.id),
+  };
 };
 
 const createIdol = (params: { idolInProduction: IdolInProduction }): Idol => {

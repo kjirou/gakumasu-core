@@ -32,8 +32,8 @@ export const characters: CharacterDefinition[] = [
     maxLife: 31,
   },
   {
-    id: "arimuranao",
-    firstName: "奈央",
+    id: "arimuramao",
+    firstName: "麻央",
     lastName: "有村",
     maxLife: 31,
   },

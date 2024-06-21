@@ -799,6 +799,7 @@ export type ProducerItemDefinition = {
  */
 export type ProducerItemInProduction = {
   definition: ProducerItemDefinition;
+  enhanced?: boolean;
 };
 
 /**
@@ -831,6 +832,7 @@ export type CharacterDefinition = {
  */
 export type IdolDefinition = {
   characterId: CharacterDefinition["id"];
+  id: string;
   producePlan: ProducePlan;
   rarity: "r" | "sr" | "ssr";
   specificCardId: CardDefinition["id"];
@@ -850,6 +852,7 @@ export type IdolInProduction = {
   idolParameters: IdolParameters;
   life: number;
   maxLife: number;
+  producerItems: ProducerItemInProduction[];
 };
 
 /**

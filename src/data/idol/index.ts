@@ -1,5 +1,17 @@
 import { IdolDefinition } from "../../types";
 
+export const findIdolDataById = (
+  id: IdolDefinition["id"],
+): IdolDefinition | undefined => idols.find((idol) => idol.id === id);
+
+export const getIdolDataById = (id: IdolDefinition["id"]): IdolDefinition => {
+  const card = findIdolDataById(id);
+  if (!card) {
+    throw new Error(`Idol not found: ${id}`);
+  }
+  return card;
+};
+
 /**
  * プロデュースアイドルの定義
  *
@@ -10,7 +22,9 @@ import { IdolDefinition } from "../../types";
  * - TODO: eslint
  */
 export const idols: IdolDefinition[] = [
+  // TODO: さきのBoom Boom Powを足す
   {
+    id: "hanamisaki-ssr-1",
     characterId: "hanamisaki",
     producePlan: {
       kind: "sense",
@@ -22,6 +36,7 @@ export const idols: IdolDefinition[] = [
     title: "Fighting My Way",
   },
   {
+    id: "hanamisaki-sr-1",
     characterId: "hanamisaki",
     producePlan: {
       kind: "sense",
@@ -33,6 +48,7 @@ export const idols: IdolDefinition[] = [
     title: "わたしが一番！",
   },
   {
+    id: "hanamisaki-r-1",
     characterId: "hanamisaki",
     producePlan: {
       kind: "sense",
@@ -44,6 +60,7 @@ export const idols: IdolDefinition[] = [
     title: "学園生活",
   },
   {
+    id: "tsukimuratemari-ssr-2",
     characterId: "tsukimuratemari",
     producePlan: {
       kind: "logic",
@@ -55,6 +72,7 @@ export const idols: IdolDefinition[] = [
     title: "アイヴイ",
   },
   {
+    id: "tsukimuratemari-ssr-1",
     characterId: "tsukimuratemari",
     producePlan: {
       kind: "sense",
@@ -66,6 +84,7 @@ export const idols: IdolDefinition[] = [
     title: "Luna say maybe",
   },
   {
+    id: "tsukimuratemari-sr-1",
     characterId: "tsukimuratemari",
     producePlan: {
       kind: "sense",
@@ -77,6 +96,7 @@ export const idols: IdolDefinition[] = [
     title: "一匹狼",
   },
   {
+    id: "tsukimuratemari-r-1",
     characterId: "tsukimuratemari",
     producePlan: {
       kind: "sense",
@@ -88,6 +108,7 @@ export const idols: IdolDefinition[] = [
     title: "学園生活",
   },
   {
+    id: "fujitakotone-ssr-2",
     characterId: "fujitakotone",
     producePlan: {
       kind: "sense",
@@ -99,6 +120,7 @@ export const idols: IdolDefinition[] = [
     title: "Yellow Big Bang！",
   },
   {
+    id: "fujitakotone-ssr-1",
     characterId: "fujitakotone",
     producePlan: {
       kind: "logic",
@@ -110,6 +132,7 @@ export const idols: IdolDefinition[] = [
     title: "世界一可愛い私",
   },
   {
+    id: "fujitakotone-sr-1",
     characterId: "fujitakotone",
     producePlan: {
       kind: "logic",
@@ -121,6 +144,7 @@ export const idols: IdolDefinition[] = [
     title: "カワイイ♡はじめました",
   },
   {
+    id: "fujitakotone-r-1",
     characterId: "fujitakotone",
     producePlan: {
       kind: "logic",
@@ -132,7 +156,8 @@ export const idols: IdolDefinition[] = [
     title: "学園生活",
   },
   {
-    characterId: "arimuranao",
+    id: "arimuramao-ssr-1",
+    characterId: "arimuramao",
     producePlan: {
       kind: "sense",
       recommendedEffect: "goodCondition",
@@ -143,7 +168,8 @@ export const idols: IdolDefinition[] = [
     title: "Fluorite",
   },
   {
-    characterId: "arimuranao",
+    id: "arimuramao-sr-1",
+    characterId: "arimuramao",
     producePlan: {
       kind: "sense",
       recommendedEffect: "goodCondition",
@@ -154,7 +180,8 @@ export const idols: IdolDefinition[] = [
     title: "はじまりはカッコよく",
   },
   {
-    characterId: "arimuranao",
+    id: "arimuramao-r-1",
+    characterId: "arimuramao",
     producePlan: {
       kind: "sense",
       recommendedEffect: "goodCondition",
@@ -165,6 +192,7 @@ export const idols: IdolDefinition[] = [
     title: "学園生活",
   },
   {
+    id: "katsuragiririya-ssr-1",
     characterId: "katsuragiririya",
     producePlan: {
       kind: "logic",
@@ -176,6 +204,7 @@ export const idols: IdolDefinition[] = [
     title: "白線",
   },
   {
+    id: "katsuragiririya-sr-1",
     characterId: "katsuragiririya",
     producePlan: {
       kind: "logic",
@@ -187,6 +216,7 @@ export const idols: IdolDefinition[] = [
     title: "一つ踏み出した先に",
   },
   {
+    id: "katsuragiririya-r-1",
     characterId: "katsuragiririya",
     producePlan: {
       kind: "logic",
@@ -198,6 +228,7 @@ export const idols: IdolDefinition[] = [
     title: "学園生活",
   },
   {
+    id: "kuramotochina-ssr-1",
     characterId: "kuramotochina",
     producePlan: {
       kind: "logic",
@@ -209,6 +240,7 @@ export const idols: IdolDefinition[] = [
     title: "Wonder Scale",
   },
   {
+    id: "kuramotochina-sr-1",
     characterId: "kuramotochina",
     producePlan: {
       kind: "logic",
@@ -220,6 +252,7 @@ export const idols: IdolDefinition[] = [
     title: "胸を張って一歩ずつ",
   },
   {
+    id: "kuramotochina-r-1",
     characterId: "kuramotochina",
     producePlan: {
       kind: "logic",
@@ -231,6 +264,7 @@ export const idols: IdolDefinition[] = [
     title: "学園生活",
   },
   {
+    id: "shiunsumika-ssr-1",
     characterId: "shiunsumika",
     producePlan: {
       kind: "sense",
@@ -242,6 +276,7 @@ export const idols: IdolDefinition[] = [
     title: "Time-Lie-One-Step",
   },
   {
+    id: "shiunsumika-sr-1",
     characterId: "shiunsumika",
     producePlan: {
       kind: "sense",
@@ -253,6 +288,7 @@ export const idols: IdolDefinition[] = [
     title: "夢へのリスタート",
   },
   {
+    id: "shiunsumika-r-1",
     characterId: "shiunsumika",
     producePlan: {
       kind: "sense",
@@ -264,6 +300,7 @@ export const idols: IdolDefinition[] = [
     title: "学園生活",
   },
   {
+    id: "shinosawahiro-ssr-1",
     characterId: "shinosawahiro",
     producePlan: {
       kind: "logic",
@@ -275,6 +312,7 @@ export const idols: IdolDefinition[] = [
     title: "光景",
   },
   {
+    id: "shinosawahiro-sr-1",
     characterId: "shinosawahiro",
     producePlan: {
       kind: "logic",
@@ -286,6 +324,7 @@ export const idols: IdolDefinition[] = [
     title: "一番向いてないこと",
   },
   {
+    id: "shinosawahiro-r-1",
     characterId: "shinosawahiro",
     producePlan: {
       kind: "logic",
@@ -297,6 +336,7 @@ export const idols: IdolDefinition[] = [
     title: "学園生活",
   },
   {
+    id: "hanamiume-ssr-1",
     characterId: "hanamiume",
     producePlan: {
       kind: "logic",
@@ -308,6 +348,7 @@ export const idols: IdolDefinition[] = [
     title: "The Rolling Riceball",
   },
   {
+    id: "hanamiume-sr-1",
     characterId: "hanamiume",
     producePlan: {
       kind: "logic",
@@ -319,6 +360,7 @@ export const idols: IdolDefinition[] = [
     title: "アイドル、はじめっ！",
   },
   {
+    id: "hanamiume-r-1",
     characterId: "hanamiume",
     producePlan: {
       kind: "logic",
