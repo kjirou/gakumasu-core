@@ -913,12 +913,14 @@ type LessonUpdateQueryDiff =
 /**
  * レッスン履歴レコード
  *
+ * TODO: 後回し、LessonUpdateQuery を集計して生成する
+ *
  * - 本家で、レッスン中に右下のボタンから表示できる履歴を再現するためのもの
  * - 原文の構文は、以下の通り
  *   - ターン別にセクションになっており、ヘッドラインと結果レコードリストがある。結果レコードの中には体力・元気・状態変化別の差分レコードがある。
  *   - 好調や好印象などのターン毎の自然減少は、どの階層のセクションにも表示されない
  *   - ヘッドライン:
- *     - 「{ターン数}」「{n}ターン目」「{スコアボーナス}%」
+ *     - 「残りターン数{n}」「{n}ターン目」「{スコアボーナス}%」
  *   - 結果レコードのヘッドライン:
  *     - 「スキルカード「{名称}」」
  *     - 「Pアイテム「{名称}」」
@@ -959,16 +961,7 @@ type LessonHistoryRecord =
       kind: "trouble";
     };
 
-/**
- * レッスン更新クエリ
- *
- * - TODO: ゲーム内履歴のスキルカード使用時トリガーは、スキルカード使用の子として表現されているので、クエリ上は別レコードにするならそれぞれの関連を表現する必要がある
- *
- * - lesson に対しての1更新を、patch 可能なレコードで表現したもの
- * - スキルカード使用・Pアイテム発動・Pアイテム使用・レッスン内小目標などによる、一回のレッスンの状態変化を表現する
- * - UI上は、スキルカード選択時のプレビュー・履歴表示・インタラクションやアニメーションに使用される
- */
-export type LessonUpdateQuery = (
+type LessonUpdateQueryReason = (
   | {
       /** スキルカード使用 */
       kind: "cardUsage";
@@ -1003,16 +996,70 @@ export type LessonUpdateQuery = (
       kind: "turnEndTrigger";
     }
   | {
-      /** ターン数を1増加 */
-      kind: "turnNumberIncrease";
-    }
-  | {
       /** ターン開始時トリガーにより発動した効果 */
       kind: "turnStartTrigger";
     }
 ) & {
-  diffs: LessonUpdateQueryDiff[];
+  /**
+   * レッスン履歴上のターン数
+   *
+   * - historyResultIndex 含めて、ゲーム内のレッスン履歴のどこに含まれるかを表現したもの
+   * - レッスン履歴を生成する時だけではく、タイムトラベル機能を作るときの程よい区切りにも使う予定
+   * - ターン数なので、1から始まる連番
+   */
+  historyTurnNumber: number;
+  /**
+   * レッスン履歴の1ターン内の結果インデックス
+   *
+   * - ゲーム内のレッスン履歴内の1ターン内の結果レコードリストの何番目に含まれるかを表現したもの
+   * - 1から始まる連番
+   */
+  historyResultIndex: number;
 };
+
+/**
+ * レッスン更新クエリ
+ *
+ * - TODO: ゲーム内履歴のスキルカード使用時トリガーは、スキルカード使用の子として表現されているので、クエリ上は別レコードにするならそれぞれの関連を表現する必要がある
+ *
+ * - Lesson に対しての1更新を、patch可能なレコードで表現したもの
+ * - スキルカード使用・Pアイテム発動・Pアイテム使用・応援/トラブルなどによる、レッスンの状態変化を表現する
+ * - このクエリを集計して、UIその他の各種機能に利用することもある
+ *   - 具体的には、スキルカード選択時のプレビュー・ゲーム内のレッスン履歴表示・インタラクションやアニメーションなどに利用する
+ */
+export type LessonUpdateQuery = (
+  | {
+      kind: "cardDraw";
+      cardId: Card["id"];
+    }
+  | {
+      kind: "cardEnhancement";
+      cardId: Card["id"];
+    }
+  | {
+      kind: "life";
+      actual: number;
+      max: number;
+    }
+  | {
+      kind: "modifier";
+      modifierKind: Modifier["kind"];
+      actual: number;
+      max: number;
+    }
+  | {
+      kind: "score";
+      actual: number;
+      max: number;
+    }
+  | {
+      kind: "turnNumberIncrease";
+    }
+  | {
+      kind: "vitality";
+      value: number;
+    }
+) & { reason: LessonUpdateQueryReason };
 
 /**
  * レッスン中の状態
