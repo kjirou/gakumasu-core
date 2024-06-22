@@ -1,6 +1,8 @@
 /** Math.random と同じインターフェース */
 export type GetRandom = () => number;
 
+export type IdGenerator = () => string;
+
 export type RangedNumber =
   | { min: number }
   | { max: number }
@@ -605,7 +607,14 @@ export type CardDefinition = {
  */
 export type CardInProduction = {
   definition: CardDefinition;
+  /**
+   * 有効か
+   *
+   * - 削除・変換・強化した場合、対象は false になり、変わりに新しいカードを追加する
+   */
+  enabled: boolean;
   enhanced: boolean;
+  id: string;
 };
 
 /**
@@ -849,7 +858,8 @@ export type IdolDefinition = {
 export type IdolInProduction = {
   deck: CardInProduction[];
   definition: IdolDefinition;
-  idolParameters: IdolParameters;
+  // TODO: まだ使わないので一旦コメントアウト
+  // idolParameters: IdolParameters;
   life: number;
   maxLife: number;
   producerItems: ProducerItemInProduction[];

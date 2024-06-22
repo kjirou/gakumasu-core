@@ -1,5 +1,20 @@
 import { CharacterDefinition } from "../../types";
 
+export const findCharacterDataById = (
+  id: CharacterDefinition["id"],
+): CharacterDefinition | undefined =>
+  characters.find((character) => character.id === id);
+
+export const getCharacterDataById = (
+  id: CharacterDefinition["id"],
+): CharacterDefinition => {
+  const character = findCharacterDataById(id);
+  if (!character) {
+    throw new Error(`Character not found: ${id}`);
+  }
+  return character;
+};
+
 /**
  * アイドル個性の定義
  *

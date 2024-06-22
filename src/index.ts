@@ -18,11 +18,15 @@
 //       - レッスン中に放置するとカードがうっすら光っておすすめカードを教えてくれるが、それがコンテストと同じAIかもしれない
 //         - もしそうだとすると、AIはサーバ側ではなくてクライアント側が計算しているのかもしれない
 
+import { getCardDataById } from "./data/card";
+import { getCharacterDataById } from "./data/character";
 import { getIdolDataById } from "./data/idol";
+import { getProducerItemDataById } from "./data/producer-item";
 import {
   Card,
   CardInProduction,
   GetRandom,
+  IdGenerator,
   Idol,
   IdolInProduction,
   Lesson,
@@ -48,13 +52,48 @@ export const shuffleArray = <Element>(
   return copied;
 };
 
-const createIdolInProduction = (params: {
+export const createIdGenerator = (): IdGenerator => {
+  let counter = 0;
+  return () => {
+    counter++;
+    return `${counter}`;
+  };
+};
+
+// TODO: 初期カードセットをどこかに定義する
+//       - 集中型: 試行錯誤、アピールの基本x2, ポーズの基本, 表情の基本x2, 表現の基本x2
+export const createIdolInProduction = (params: {
+  cards: CardInProduction[];
+  cardIdGenerator: IdGenerator;
   id: string;
   specificCardEnhanced: boolean;
   specificProducerItemEnhanced: boolean;
 }): IdolInProduction => {
+  const idolDefinition = getIdolDataById(params.id);
+  const characterDefinition = getCharacterDataById(idolDefinition.characterId);
+  const specificCardDefinition = getCardDataById(idolDefinition.specificCardId);
+  const specificProducerItemDefinition = getProducerItemDataById(
+    idolDefinition.specificProducerItemId,
+  );
   return {
-    definition: getIdolDataById(params.id),
+    deck: [
+      ...params.cards,
+      {
+        id: params.cardIdGenerator(),
+        definition: specificCardDefinition,
+        enhanced: params.specificCardEnhanced,
+        enabled: true,
+      },
+    ],
+    definition: idolDefinition,
+    life: characterDefinition.maxLife,
+    maxLife: characterDefinition.maxLife,
+    producerItems: [
+      {
+        definition: specificProducerItemDefinition,
+        enhanced: params.specificProducerItemEnhanced,
+      },
+    ],
   };
 };
 
