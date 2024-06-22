@@ -809,6 +809,7 @@ export type ProducerItemDefinition = {
 export type ProducerItemInProduction = {
   definition: ProducerItemDefinition;
   enhanced?: boolean;
+  id: string;
 };
 
 /**

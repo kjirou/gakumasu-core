@@ -66,6 +66,7 @@ export const createIdolInProduction = (params: {
   cards: CardInProduction[];
   cardIdGenerator: IdGenerator;
   id: string;
+  producerItemIdGenerator: IdGenerator;
   specificCardEnhanced: boolean;
   specificProducerItemEnhanced: boolean;
 }): IdolInProduction => {
@@ -90,6 +91,7 @@ export const createIdolInProduction = (params: {
     maxLife: characterDefinition.maxLife,
     producerItems: [
       {
+        id: params.producerItemIdGenerator(),
         definition: specificProducerItemDefinition,
         enhanced: params.specificProducerItemEnhanced,
       },

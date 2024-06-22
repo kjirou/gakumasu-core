@@ -15,12 +15,14 @@ import { createIdGenerator, createIdolInProduction } from "./index";
 describe("createIdolInProduction", () => {
   test("it creates an idol in production", () => {
     const cardIdGenerator = createIdGenerator();
+    const producerItemIdGenerator = createIdGenerator();
     const idolInProduction = createIdolInProduction({
       id: "hanamisaki-r-1",
       cards: [],
       specificCardEnhanced: false,
       specificProducerItemEnhanced: false,
       cardIdGenerator,
+      producerItemIdGenerator,
     });
     expect(idolInProduction).toStrictEqual({
       deck: [],
