@@ -898,17 +898,19 @@ export type Idol = {
  * - レッスン開始前に生成され、レッスン終了時に破棄される
  */
 export type Lesson = {
+  /** レッスン内に存在するスキルカードリスト */
+  cards: Card[];
   /** 山札、原文でも「山札」 */
-  deck: Card[];
+  deck: Array<Card["id"]>;
   /** 捨札、原文でも「捨札」、山札の再生成時に含まれるカード群 */
-  discardPile: Card[];
+  discardPile: Array<Card["id"]>;
   /** 手札、原文でも「手札」、最大5枚 */
-  hand: Card[];
+  hand: Array<Card["id"]>;
   idol: Idol;
   /** 最終ターン数、この値と同じターン数目の行動で終了、「ターン追加」の効果は含まない */
   lastTurnNumber: number;
   /** 除外されたカード群、原文は「除外」、山札の再生成時に含まれないカード群 */
-  removedCardPile: Card[];
+  removedCardPile: Array<Card["id"]>;
   /**
    * スコア
    *

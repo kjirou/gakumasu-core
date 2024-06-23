@@ -12,13 +12,13 @@ export const drawCardsFromDeck = (
   discardPile: Lesson["discardPile"],
   getRandom: GetRandom,
 ): {
-  deck: Lesson["deck"];
-  discardPile: Lesson["discardPile"];
-  drawnCards: Card[];
+  deck: Array<Card["id"]>;
+  discardPile: Array<Card["id"]>;
+  drawnCards: Array<Card["id"]>;
 } => {
   let newDeck = deck;
   let newDiscardPile = discardPile;
-  let drawnCards: Card[] = [];
+  let drawnCards = [];
   for (let i = 0; i < count; i++) {
     if (newDeck.length === 0) {
       newDeck = shuffleArray(newDiscardPile, getRandom);
@@ -43,7 +43,7 @@ export const drawCardsFromDeck = (
  * - TODO: レッスン開始時に手札
  * - TODO: 手札最大枚数の制限
  */
-export const drawCardsInHandOnLessonStartTrigger = (
+export const drawCardsInHandOnLessonStart = (
   lesson: Lesson,
   params: {
     count: number;
@@ -60,7 +60,7 @@ export const drawCardsInHandOnLessonStartTrigger = (
   return [
     {
       kind: "hand",
-      cardIds: drawnCards.map((card) => card.id),
+      cardIds: drawnCards,
       reason: {
         kind: "lessonStartTrigger",
         historyTurnNumber: lesson.turnNumber,
@@ -69,7 +69,7 @@ export const drawCardsInHandOnLessonStartTrigger = (
     },
     {
       kind: "deck",
-      cardIds: deck.map((card) => card.id),
+      cardIds: deck,
       reason: {
         kind: "lessonStartTrigger",
         historyTurnNumber: lesson.turnNumber,
@@ -78,7 +78,7 @@ export const drawCardsInHandOnLessonStartTrigger = (
     },
     {
       kind: "discardPile",
-      cardIds: discardPile.map((card) => card.id),
+      cardIds: discardPile,
       reason: {
         kind: "lessonStartTrigger",
         historyTurnNumber: lesson.turnNumber,

@@ -2,8 +2,25 @@ import { Card, IdolInProduction, Lesson } from "./types";
 import { getCardDataById } from "./data/card";
 import { getIdolDataById } from "./data/idol";
 import { getProducerItemDataById } from "./data/producer-item";
-import { createIdolInProduction, createLessonGamePlay } from "./models";
+import {
+  createIdolInProduction,
+  createLessonGamePlay,
+  // getCardFromLesson,
+  // patchUpdates,
+  prepareCardsForLesson,
+} from "./models";
 import { createIdGenerator } from "./utils";
+
+const createCardsForTest = (ids: Array<Card["id"]>): Card[] => {
+  return prepareCardsForLesson(
+    ids.map((id) => ({
+      id,
+      definition: getCardDataById("apirunokihon"),
+      enhanced: false,
+      enabled: true,
+    })),
+  );
+};
 
 describe("createIdolInProduction", () => {
   test("it creates an idol in production", () => {
@@ -86,6 +103,7 @@ describe("createLessonGamePlay", () => {
           vitality: 0,
           totalCardUsageCount: 0,
         },
+        cards: expect.any(Array),
         hand: [],
         deck: expect.any(Array),
         discardPile: [],

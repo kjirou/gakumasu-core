@@ -102,11 +102,13 @@ const createLesson = (params: {
   idolInProduction: IdolInProduction;
   lastTurnNumber: Lesson["lastTurnNumber"];
 }): Lesson => {
+  const cards = shuffleArray(
+    prepareCardsForLesson(params.idolInProduction.deck),
+    params.getRandom,
+  );
   return {
-    deck: shuffleArray(
-      prepareCardsForLesson(params.idolInProduction.deck),
-      params.getRandom,
-    ),
+    cards,
+    deck: cards.map((card) => card.id),
     discardPile: [],
     hand: [],
     idol: createIdol({
@@ -134,4 +136,48 @@ export const createLessonGamePlay = (params: {
     }),
     updates: [],
   };
+};
+
+export const patchUpdates = (
+  lesson: Lesson,
+  updates: LessonUpdateQuery[],
+): Lesson => {
+  let newLesson = lesson;
+  for (const update of updates) {
+    switch (update.kind) {
+      case "deck": {
+        newLesson = {
+          ...newLesson,
+          deck: update.cardIds,
+        };
+        break;
+      }
+      case "discardPile": {
+        newLesson = {
+          ...newLesson,
+          discardPile: update.cardIds,
+        };
+        break;
+      }
+      case "hand": {
+        newLesson = {
+          ...newLesson,
+          hand: update.cardIds,
+        };
+        break;
+      }
+      case "removedCardPile": {
+        newLesson = {
+          ...newLesson,
+          removedCardPile: update.cardIds,
+        };
+        break;
+      }
+      // TODO: 後で never を使うのに書き直す
+      default: {
+        throw new Error(`Unexpected update kind: ${update.kind}`);
+      }
+    }
+  }
+  return newLesson;
 };

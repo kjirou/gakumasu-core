@@ -33,6 +33,7 @@ import {
   LessonGamePlay,
   LessonUpdateQuery,
 } from "./types";
+import { drawCardsInHandOnLessonStart } from "./lesson-mutation";
 import { shuffleArray } from "./utils";
 
 //
@@ -64,7 +65,17 @@ export const startLessonTurn = (
   lessonGamePlay: LessonGamePlay,
 ): LessonGamePlay => {
   let newLessonGamePlay = lessonGamePlay;
-  // TODO: 手札の抽出
+
+  // 手札を山札から引く
+  newLessonGamePlay = {
+    ...newLessonGamePlay,
+    updates: drawCardsInHandOnLessonStart(newLessonGamePlay.initialLesson, {
+      count: 3,
+      historyResultIndex: 1,
+      getRandom: newLessonGamePlay.getRandom,
+    }),
+  };
+
   // TODO: レッスン開始時トリガー
   // TODO: ターン開始時トリガー
   return newLessonGamePlay;
