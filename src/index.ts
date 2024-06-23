@@ -32,7 +32,43 @@ import {
   Lesson,
   LessonGamePlay,
 } from "./types";
-import { createIdGenerator, shuffleArray } from "./utils";
+import { shuffleArray } from "./utils";
+
+/**
+ * 山札から指定数のスキルカードを引く
+ *
+ * - 山札がなくなった場合は、捨札をシャッフルして山札にする
+ */
+export const drawCardsFromDeck = (
+  deck: Lesson["deck"],
+  count: number,
+  discardPile: Lesson["discardPile"],
+  getRandom: GetRandom,
+): {
+  deck: Lesson["deck"];
+  discardPile: Lesson["discardPile"];
+  drawnCards: Card[];
+} => {
+  let newDeck = deck;
+  let newDiscardPile = discardPile;
+  let drawnCards: Card[] = [];
+  for (let i = 0; i < count; i++) {
+    if (newDeck.length === 0) {
+      newDeck = shuffleArray(newDiscardPile, getRandom);
+      newDiscardPile = [];
+    }
+    const drawnCard = newDeck.shift();
+    if (!drawnCard) {
+      throw new Error("Unexpected empty deck");
+    }
+    drawnCards.push(drawnCard);
+  }
+  return {
+    deck: newDeck,
+    discardPile: newDiscardPile,
+    drawnCards,
+  };
+};
 
 // TODO: 初期カードセットをどこかに定義する
 //       - 集中型: 試行錯誤、アピールの基本x2, ポーズの基本, 表情の基本x2, 表現の基本x2
@@ -81,8 +117,10 @@ const createIdol = (params: { idolInProduction: IdolInProduction }): Idol => {
   };
 };
 
-const createCards = (params: { original: CardInProduction[] }): Card[] => {
-  return params.original.map((cardInProduction) => {
+export const prepareCardsForLesson = (
+  cardsInProduction: CardInProduction[],
+): Card[] => {
+  return cardsInProduction.map((cardInProduction) => {
     return {
       id: cardInProduction.id,
       original: cardInProduction,
@@ -98,7 +136,7 @@ const createLesson = (params: {
 }): Lesson => {
   return {
     deck: shuffleArray(
-      createCards({ original: params.idolInProduction.deck }),
+      prepareCardsForLesson(params.idolInProduction.deck),
       params.getRandom,
     ),
     discardPile: [],
