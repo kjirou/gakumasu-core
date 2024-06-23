@@ -34,6 +34,7 @@ import {
   LessonUpdateQuery,
 } from "./types";
 import { drawCardsInHandOnLessonStart } from "./lesson-mutation";
+import { patchUpdates } from "./models";
 import { shuffleArray } from "./utils";
 
 //
@@ -64,21 +65,30 @@ import { shuffleArray } from "./utils";
 export const startLessonTurn = (
   lessonGamePlay: LessonGamePlay,
 ): LessonGamePlay => {
-  let newLessonGamePlay = lessonGamePlay;
+  let updatesList = [lessonGamePlay.updates];
+  let lesson = lessonGamePlay.initialLesson;
+  let historyResultIndex = 1;
 
   // 手札を山札から引く
-  newLessonGamePlay = {
-    ...newLessonGamePlay,
-    updates: drawCardsInHandOnLessonStart(newLessonGamePlay.initialLesson, {
+  lesson = patchUpdates(lesson, updatesList[updatesList.length - 1]);
+  updatesList = [
+    ...updatesList,
+    drawCardsInHandOnLessonStart(lesson, {
       count: 3,
-      historyResultIndex: 1,
-      getRandom: newLessonGamePlay.getRandom,
+      historyResultIndex: historyResultIndex,
+      getRandom: lessonGamePlay.getRandom,
     }),
-  };
+  ];
+  historyResultIndex++;
 
   // TODO: レッスン開始時トリガー
+
   // TODO: ターン開始時トリガー
-  return newLessonGamePlay;
+
+  return {
+    ...lessonGamePlay,
+    updates: updatesList.flat(),
+  };
 };
 
 // const playCard

@@ -42,6 +42,7 @@ export const drawCardsFromDeck = (
  *
  * - TODO: レッスン開始時に手札
  * - TODO: 手札最大枚数の制限
+ * - TODO: discardPile に変化がないときは戻り値に含めない
  */
 export const drawCardsInHandOnLessonStart = (
   lesson: Lesson,
