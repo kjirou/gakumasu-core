@@ -905,8 +905,8 @@ export type Lesson = {
   idol: Idol;
   /** 最終ターン数、この値と同じターン数目の行動で終了、「ターン追加」の効果は含まない */
   lastTurnNumber: number;
-  /** 除外されたカード、原文は「除外」、山札の再生成時に含まれないカード群 */
-  removedCards: Card[];
+  /** 除外されたカード群、原文は「除外」、山札の再生成時に含まれないカード群 */
+  removedCardPile: Card[];
   /**
    * スコア
    *

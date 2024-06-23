@@ -106,7 +106,7 @@ const createLesson = (params: {
       idolInProduction: params.idolInProduction,
     }),
     lastTurnNumber: params.lastTurnNumber,
-    removedCards: [],
+    removedCardPile: [],
     score: 0,
     turnNumber: 1,
   };
