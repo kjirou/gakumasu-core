@@ -623,7 +623,12 @@ export type CardInProduction = {
  * - レッスン開始前に生成され、レッスン終了時に破棄される
  */
 export type Card = {
-  /** カードID、1レッスン内で一意 */
+  /**
+   * スキルカードID
+   *
+   * - 1レッスン内で一意
+   * - 所持しているスキルカードは CardInProduction["id"] を複製する、一方で生成したスキルカードは新たにIDを生成して割り振る
+   */
   id: string;
   original: CardInProduction;
   /**

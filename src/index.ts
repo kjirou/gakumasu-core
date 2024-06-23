@@ -82,9 +82,9 @@ const createIdol = (params: { idolInProduction: IdolInProduction }): Idol => {
 };
 
 const createCards = (params: { original: CardInProduction[] }): Card[] => {
-  return params.original.map((cardInProduction, index) => {
+  return params.original.map((cardInProduction) => {
     return {
-      id: `${index + 1}`,
+      id: cardInProduction.id,
       original: cardInProduction,
       temporaryEnhancements: [],
     };
