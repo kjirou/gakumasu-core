@@ -35,106 +35,25 @@ import {
 } from "./types";
 import { shuffleArray } from "./utils";
 
-/** 手札の最大枚数 */
-const maxHandSize = 5;
-
-// TODO: 初期カードセットをどこかに定義する
-//       - 集中型: 試行錯誤、アピールの基本x2, ポーズの基本, 表情の基本x2, 表現の基本x2
-export const createIdolInProduction = (params: {
-  cards: CardInProduction[];
-  id: string;
-  idGenerator: IdGenerator;
-  specificCardEnhanced: boolean;
-  specificProducerItemEnhanced: boolean;
-}): IdolInProduction => {
-  const idolDefinition = getIdolDataById(params.id);
-  const characterDefinition = getCharacterDataById(idolDefinition.characterId);
-  const specificCardDefinition = getCardDataById(idolDefinition.specificCardId);
-  const specificProducerItemDefinition = getProducerItemDataById(
-    idolDefinition.specificProducerItemId,
-  );
-  return {
-    deck: [
-      ...params.cards,
-      {
-        id: params.idGenerator(),
-        definition: specificCardDefinition,
-        enhanced: params.specificCardEnhanced,
-        enabled: true,
-      },
-    ],
-    definition: idolDefinition,
-    life: characterDefinition.maxLife,
-    maxLife: characterDefinition.maxLife,
-    producerItems: [
-      {
-        id: params.idGenerator(),
-        definition: specificProducerItemDefinition,
-        enhanced: params.specificProducerItemEnhanced,
-      },
-    ],
-  };
-};
-
-const createIdol = (params: { idolInProduction: IdolInProduction }): Idol => {
-  return {
-    life: params.idolInProduction.life,
-    original: params.idolInProduction,
-    totalCardUsageCount: 0,
-    vitality: 0,
-  };
-};
-
-export const prepareCardsForLesson = (
-  cardsInProduction: CardInProduction[],
-): Card[] => {
-  return cardsInProduction.map((cardInProduction) => {
-    return {
-      id: cardInProduction.id,
-      original: cardInProduction,
-      temporaryEnhancements: [],
-    };
-  });
-};
-
-const createLesson = (params: {
-  getRandom: GetRandom;
-  idolInProduction: IdolInProduction;
-  lastTurnNumber: Lesson["lastTurnNumber"];
-}): Lesson => {
-  return {
-    deck: shuffleArray(
-      prepareCardsForLesson(params.idolInProduction.deck),
-      params.getRandom,
-    ),
-    discardPile: [],
-    hand: [],
-    idol: createIdol({
-      idolInProduction: params.idolInProduction,
-    }),
-    lastTurnNumber: params.lastTurnNumber,
-    removedCardPile: [],
-    score: 0,
-    turnNumber: 1,
-  };
-};
-
-export const createLessonGamePlay = (params: {
-  idolInProduction: IdolInProduction;
-  getRandom?: GetRandom;
-  lastTurnNumber: Lesson["lastTurnNumber"];
-}): LessonGamePlay => {
-  const getRandom = params.getRandom ? params.getRandom : Math.random;
-  return {
-    getRandom,
-    initialLesson: createLesson({
-      getRandom,
-      idolInProduction: params.idolInProduction,
-      lastTurnNumber: params.lastTurnNumber,
-    }),
-    updates: [],
-  };
-};
+//
+// UI側での想定の呼び出し方
+//
+// ```
+// const lessonGamePlay = createLessonGamePlay();
+//
+// const onStartGame = () => {
+//   setState(startLessonTurn(lessonGamePlay))
+// };
+//
+// const onPressCard = () => {
+//   setState(selectCard(lessonGamePlay, cardInHandIndex))
+// };
+//
+// const onPress休憩 = () => {
+//   setState(skipTurn(lessonGamePlay));
+// };
+// ```
+//
 
 /**
  * レッスンのターンを開始する
@@ -195,23 +114,3 @@ export const skipTurn = (lessonGamePlay: LessonGamePlay): LessonGamePlay => {
   let newLessonGamePlay = lessonGamePlay;
   return newLessonGamePlay;
 };
-
-//
-// UI側での想定の呼び出し方
-//
-// ```
-// const lessonGamePlay = createLessonGamePlay();
-//
-// const onStartGame = () => {
-//   setState(startLessonTurn(lessonGamePlay))
-// };
-//
-// const onPressCard = () => {
-//   setState(selectCard(lessonGamePlay, cardInHandIndex))
-// };
-//
-// const onPress休憩 = () => {
-//   setState(skipTurn(lessonGamePlay));
-// };
-// ```
-//

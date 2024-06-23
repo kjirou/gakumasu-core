@@ -2,11 +2,7 @@ import { Card, IdolInProduction, Lesson } from "./types";
 import { getCardDataById } from "./data/card";
 import { getIdolDataById } from "./data/idol";
 import { getProducerItemDataById } from "./data/producer-item";
-import {
-  createIdolInProduction,
-  createLessonGamePlay,
-  prepareCardsForLesson,
-} from "./index";
+import { createIdolInProduction, createLessonGamePlay } from "./models";
 import { createIdGenerator } from "./utils";
 
 describe("createIdolInProduction", () => {
@@ -90,6 +86,7 @@ describe("createLessonGamePlay", () => {
           vitality: 0,
           totalCardUsageCount: 0,
         },
+        hand: [],
         deck: expect.any(Array),
         discardPile: [],
         removedCardPile: [],

@@ -1,6 +1,7 @@
 import { Card, IdolInProduction, Lesson } from "./types";
 import { getCardDataById } from "./data/card";
-import { prepareCardsForLesson } from "./index";
+import { drawCardsFromDeck } from "./lesson-mutation";
+import { prepareCardsForLesson } from "./models";
 
 describe("drawCardsFromDeck", () => {
   const createTestCards = (ids: Array<Card["id"]>): Card[] => {
