@@ -31,47 +31,12 @@ import {
   IdolInProduction,
   Lesson,
   LessonGamePlay,
+  LessonUpdateQuery,
 } from "./types";
 import { shuffleArray } from "./utils";
 
 /** 手札の最大枚数 */
 const maxHandSize = 5;
-
-/**
- * 山札から指定数のスキルカードを引く
- *
- * - 山札がなくなった場合は、捨札をシャッフルして山札にする
- */
-export const drawCardsFromDeck = (
-  deck: Lesson["deck"],
-  count: number,
-  discardPile: Lesson["discardPile"],
-  getRandom: GetRandom,
-): {
-  deck: Lesson["deck"];
-  discardPile: Lesson["discardPile"];
-  drawnCards: Card[];
-} => {
-  let newDeck = deck;
-  let newDiscardPile = discardPile;
-  let drawnCards: Card[] = [];
-  for (let i = 0; i < count; i++) {
-    if (newDeck.length === 0) {
-      newDeck = shuffleArray(newDiscardPile, getRandom);
-      newDiscardPile = [];
-    }
-    const drawnCard = newDeck.shift();
-    if (!drawnCard) {
-      throw new Error("Unexpected empty deck");
-    }
-    drawnCards.push(drawnCard);
-  }
-  return {
-    deck: newDeck,
-    discardPile: newDiscardPile,
-    drawnCards,
-  };
-};
 
 // TODO: 初期カードセットをどこかに定義する
 //       - 集中型: 試行錯誤、アピールの基本x2, ポーズの基本, 表情の基本x2, 表現の基本x2
@@ -143,6 +108,7 @@ const createLesson = (params: {
       params.getRandom,
     ),
     discardPile: [],
+    hand: [],
     idol: createIdol({
       idolInProduction: params.idolInProduction,
     }),

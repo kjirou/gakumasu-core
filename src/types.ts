@@ -1045,11 +1045,11 @@ export type LessonUpdateQuery = (
     }
   | {
       kind: "deck";
-      cardIds: Lesson["deck"];
+      cardIds: Card["id"][];
     }
   | {
       kind: "discardPile";
-      cardIds: Lesson["discardPile"];
+      cardIds: Card["id"][];
     }
   | {
       kind: "hand";
@@ -1065,6 +1065,10 @@ export type LessonUpdateQuery = (
       modifierKind: Modifier["kind"];
       actual: number;
       max: number;
+    }
+  | {
+      kind: "removedCardPile";
+      cardIds: Card["id"][];
     }
   | {
       kind: "score";
