@@ -32,39 +32,7 @@ import {
   Lesson,
   LessonGamePlay,
 } from "./types";
-
-/**
- * Shuffle an array with the Fisher–Yates algorithm.
- *
- * Ref) https://www.30secondsofcode.org/js/s/shuffle/
- */
-export const shuffleArray = <Element>(
-  array: Element[],
-  getRandom: GetRandom,
-): Element[] => {
-  const copied = array.slice();
-  let m = copied.length;
-  while (m) {
-    const i = Math.floor(getRandom() * m);
-    m--;
-    [copied[m], copied[i]] = [copied[i], copied[m]];
-  }
-  return copied;
-};
-
-/**
- * 1レッスンまたは1プロデュースの範囲で一意のIDを生成する
- *
- * - TODO: データロードの際の始点の復元
- */
-export const createIdGenerator = (): IdGenerator => {
-  // 整数のオーバーフローは考えない、 Number.MAX_SAFE_INTEGER を超えることはなさそう
-  let counter = 0;
-  return () => {
-    counter++;
-    return `${counter}`;
-  };
-};
+import { createIdGenerator, shuffleArray } from "./utils";
 
 // TODO: 初期カードセットをどこかに定義する
 //       - 集中型: 試行錯誤、アピールの基本x2, ポーズの基本, 表情の基本x2, 表現の基本x2

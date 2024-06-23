@@ -2,7 +2,8 @@ import { IdolInProduction } from "./types";
 import { getCardDataById } from "./data/card";
 import { getIdolDataById } from "./data/idol";
 import { getProducerItemDataById } from "./data/producer-item";
-import { createIdGenerator, createIdolInProduction } from "./index";
+import { createIdolInProduction } from "./index";
+import { createIdGenerator } from "./utils";
 
 // const createIdolInProduction = (
 //   overwrites: Partial<IdolInProduction>,
@@ -47,7 +48,13 @@ describe("createIdolInProduction", () => {
       definition: getIdolDataById("hanamisaki-r-1"),
       life: 32,
       maxLife: 32,
-      producerItems: expect.any(Array),
+      producerItems: [
+        {
+          id: "3",
+          definition: getProducerItemDataById("bakuonraion"),
+          enhanced: false,
+        },
+      ],
     });
   });
 });
