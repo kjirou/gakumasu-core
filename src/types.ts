@@ -902,6 +902,8 @@ export type Lesson = {
   deck: Card[];
   /** 捨札、原文でも「捨札」、山札の再生成時に含まれるカード群 */
   discardPile: Card[];
+  /** 手札、原文でも「手札」、最大5枚 */
+  hand: Card[];
   idol: Idol;
   /** 最終ターン数、この値と同じターン数目の行動で終了、「ターン追加」の効果は含まない */
   lastTurnNumber: number;
@@ -1038,12 +1040,20 @@ type LessonUpdateQueryReason = (
  */
 export type LessonUpdateQuery = (
   | {
-      kind: "cardDraw";
+      kind: "cardEnhancement";
       cardId: Card["id"];
     }
   | {
-      kind: "cardEnhancement";
-      cardId: Card["id"];
+      kind: "deck";
+      cardIds: Lesson["deck"];
+    }
+  | {
+      kind: "discardPile";
+      cardIds: Lesson["discardPile"];
+    }
+  | {
+      kind: "hand";
+      cardIds: Card["id"][];
     }
   | {
       kind: "life";

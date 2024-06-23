@@ -34,6 +34,9 @@ import {
 } from "./types";
 import { shuffleArray } from "./utils";
 
+/** 手札の最大枚数 */
+const maxHandSize = 5;
+
 /**
  * 山札から指定数のスキルカードを引く
  *
@@ -194,6 +197,7 @@ const endLessonTurn = (lessonGamePlay: LessonGamePlay): LessonGamePlay => {
   let newLessonGamePlay = lessonGamePlay;
   // TODO: ターン終了時トリガー
   // TODO: 小目標発動
+  // TODO: 手札を捨てる
   return newLessonGamePlay;
 };
 
