@@ -52,7 +52,13 @@ export const shuffleArray = <Element>(
   return copied;
 };
 
+/**
+ * 1レッスンまたは1プロデュースの範囲で一意のIDを生成する
+ *
+ * - TODO: データロードの際の始点の復元
+ */
 export const createIdGenerator = (): IdGenerator => {
+  // 整数のオーバーフローは考えない、 Number.MAX_SAFE_INTEGER を超えることはなさそう
   let counter = 0;
   return () => {
     counter++;
@@ -64,9 +70,8 @@ export const createIdGenerator = (): IdGenerator => {
 //       - 集中型: 試行錯誤、アピールの基本x2, ポーズの基本, 表情の基本x2, 表現の基本x2
 export const createIdolInProduction = (params: {
   cards: CardInProduction[];
-  cardIdGenerator: IdGenerator;
   id: string;
-  producerItemIdGenerator: IdGenerator;
+  idGenerator: IdGenerator;
   specificCardEnhanced: boolean;
   specificProducerItemEnhanced: boolean;
 }): IdolInProduction => {
@@ -80,7 +85,7 @@ export const createIdolInProduction = (params: {
     deck: [
       ...params.cards,
       {
-        id: params.cardIdGenerator(),
+        id: params.idGenerator(),
         definition: specificCardDefinition,
         enhanced: params.specificCardEnhanced,
         enabled: true,
@@ -91,7 +96,7 @@ export const createIdolInProduction = (params: {
     maxLife: characterDefinition.maxLife,
     producerItems: [
       {
-        id: params.producerItemIdGenerator(),
+        id: params.idGenerator(),
         definition: specificProducerItemDefinition,
         enhanced: params.specificProducerItemEnhanced,
       },
