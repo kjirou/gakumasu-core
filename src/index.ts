@@ -33,8 +33,8 @@ import {
   LessonGamePlay,
   LessonUpdateQuery,
 } from "./types";
-import { drawCardsInHandOnLessonStart } from "./lesson-mutation";
-import { patchUpdates } from "./models";
+import { drawCardsOnLessonStart } from "./lesson-mutation";
+import { handSizeOnLessonStart, patchUpdates } from "./models";
 import { shuffleArray } from "./utils";
 
 //
@@ -73,8 +73,9 @@ export const startLessonTurn = (
   lesson = patchUpdates(lesson, updatesList[updatesList.length - 1]);
   updatesList = [
     ...updatesList,
-    drawCardsInHandOnLessonStart(lesson, {
-      count: 3,
+    drawCardsOnLessonStart(lesson, {
+      // 一時的なメモ: 次のターンにスキルカードを引く効果は、本家を見ると手札に後で足すアニメーションなので、この後のレッスン開始トリガーで別にやってそう
+      count: handSizeOnLessonStart,
       historyResultIndex: historyResultIndex,
       getRandom: lessonGamePlay.getRandom,
     }),

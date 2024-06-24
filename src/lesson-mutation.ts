@@ -1,4 +1,5 @@
-import { Card, GetRandom, Lesson, LessonUpdateQuery } from "./types";
+import { handSizeOnLessonStart } from "./models";
+import type { Card, GetRandom, Lesson, LessonUpdateQuery } from "./types";
 import { shuffleArray } from "./utils";
 
 /**
@@ -20,6 +21,7 @@ export const drawCardsFromDeck = (
   let newDiscardPile = discardPile;
   let drawnCards = [];
   for (let i = 0; i < count; i++) {
+    // 捨札を加えても引く数に足りない状況は考慮しない
     if (newDeck.length === 0) {
       newDeck = shuffleArray(newDiscardPile, getRandom);
       newDiscardPile = [];
@@ -42,9 +44,8 @@ export const drawCardsFromDeck = (
  *
  * - TODO: レッスン開始時に手札
  * - TODO: 手札最大枚数の制限
- * - TODO: discardPile に変化がないときは戻り値に含めない
  */
-export const drawCardsInHandOnLessonStart = (
+export const drawCardsOnLessonStart = (
   lesson: Lesson,
   params: {
     count: number;
@@ -58,7 +59,7 @@ export const drawCardsInHandOnLessonStart = (
     lesson.discardPile,
     params.getRandom,
   );
-  return [
+  let updates: LessonUpdateQuery[] = [
     {
       kind: "hand",
       cardIds: drawnCards,
@@ -77,14 +78,22 @@ export const drawCardsInHandOnLessonStart = (
         historyResultIndex: params.historyResultIndex,
       },
     },
-    {
-      kind: "discardPile",
-      cardIds: discardPile,
-      reason: {
-        kind: "lessonStartTrigger",
-        historyTurnNumber: lesson.turnNumber,
-        historyResultIndex: params.historyResultIndex,
-      },
-    },
   ];
+  if (
+    lesson.discardPile.some((cardId, index) => cardId !== discardPile[index])
+  ) {
+    updates = [
+      ...updates,
+      {
+        kind: "discardPile",
+        cardIds: discardPile,
+        reason: {
+          kind: "lessonStartTrigger",
+          historyTurnNumber: lesson.turnNumber,
+          historyResultIndex: params.historyResultIndex,
+        },
+      },
+    ];
+  }
+  return updates;
 };

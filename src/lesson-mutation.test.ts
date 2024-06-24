@@ -1,19 +1,9 @@
 import { Card, IdolInProduction, Lesson } from "./types";
 import { getCardDataById } from "./data/card";
-import { drawCardsFromDeck } from "./lesson-mutation";
+import { drawCardsFromDeck, drawCardsOnLessonStart } from "./lesson-mutation";
 import { prepareCardsForLesson } from "./models";
 
 describe("drawCardsFromDeck", () => {
-  const createTestCards = (ids: Array<Card["id"]>): Card[] => {
-    return prepareCardsForLesson(
-      ids.map((id) => ({
-        id,
-        definition: getCardDataById("apirunokihon"),
-        enhanced: false,
-        enabled: true,
-      })),
-    );
-  };
   test("山札がなくならない状態で1枚引いた時、1枚引けて、山札が1枚減る", () => {
     const deck = ["1", "2", "3"];
     const { drawnCards, deck: newDeck } = drawCardsFromDeck(
@@ -55,5 +45,44 @@ describe("drawCardsFromDeck", () => {
       "4",
       "5",
     ]);
+  });
+});
+describe("drawCardsOnLessonStart", () => {
+  test("山札に引く数が残っている時、山札はその分減り、捨札に変化はない", () => {
+    const lessonMock = {
+      hand: [] as string[],
+      deck: ["1", "2", "3"],
+      discardPile: ["4"],
+    } as Lesson;
+    const updates: any = drawCardsOnLessonStart(lessonMock, {
+      count: 3,
+      historyResultIndex: 1,
+      getRandom: Math.random,
+    });
+    expect(updates).toHaveLength(2);
+    // NOTE: 本来は順不同な更新クエリの順番に依存しているが、手間省略のため許容する
+    expect(updates[0].kind).toBe("hand");
+    expect(updates[0].cardIds).toHaveLength(3);
+    expect(updates[1].kind).toBe("deck");
+    expect(updates[1].cardIds).toHaveLength(0);
+  });
+  test("山札に引く数が残っていない時、山札は再構築された上で残りの引く数分減り、捨札は空になる", () => {
+    const lessonMock = {
+      hand: [] as string[],
+      deck: ["1", "2"],
+      discardPile: ["3", "4"],
+    } as Lesson;
+    const updates: any = drawCardsOnLessonStart(lessonMock, {
+      count: 3,
+      historyResultIndex: 1,
+      getRandom: Math.random,
+    });
+    expect(updates).toHaveLength(3);
+    expect(updates[0].kind).toBe("hand");
+    expect(updates[0].cardIds).toHaveLength(3);
+    expect(updates[1].kind).toBe("deck");
+    expect(updates[1].cardIds).toHaveLength(1);
+    expect(updates[2].kind).toBe("discardPile");
+    expect(updates[2].cardIds).toHaveLength(0);
   });
 });

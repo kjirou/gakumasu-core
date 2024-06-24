@@ -35,6 +35,9 @@ import {
 } from "./types";
 import { shuffleArray } from "./utils";
 
+/** ターン開始時の手札数 */
+export const handSizeOnLessonStart = 3;
+
 /** 手札の最大枚数 */
 export const maxHandSize = 5;
 
