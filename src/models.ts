@@ -119,6 +119,7 @@ const createLesson = (params: {
     }),
     lastTurnNumber: params.lastTurnNumber,
     removedCardPile: [],
+    selectedCardInHandIndex: undefined,
     score: 0,
     turnNumber: 1,
   };

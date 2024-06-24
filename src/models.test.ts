@@ -107,6 +107,7 @@ describe("createLessonGamePlay", () => {
         deck: expect.any(Array),
         discardPile: [],
         removedCardPile: [],
+        selectedCardInHandIndex: undefined,
         score: 0,
         turnNumber: 1,
         lastTurnNumber: 6,

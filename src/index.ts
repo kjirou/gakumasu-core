@@ -92,8 +92,37 @@ export const startLessonTurn = (
   };
 };
 
-// const playCard
+// const playCard、スコアパーフェクト達成によるゲーム終了判定含む（ターン終了時処理を介さずに即座に終了してそう？）
 // const previewCardUsage
+
+/**
+ * スキルカードを選択する
+ *
+ * - スキルカードを選択し、結果のプレビュー表示または使用を行う
+ * - TODO: Pアイテムなどによる誘発された効果も、プレビューに反映されてる？
+ *
+ * @param cardInHandIndex 選択した手札のインデックス。 undefined は選択状態解除を意味し、本家UIでは選択中にスキルカード以外の部分をタップすることに相当する。
+ */
+export const selectCard = (
+  lessonGamePlay: LessonGamePlay,
+  cardInHandIndex: number | undefined,
+): LessonGamePlay => {
+  let updatesList = [lessonGamePlay.updates];
+  let lesson = lessonGamePlay.initialLesson;
+  let historyResultIndex = 1;
+
+  // TODO: もしプレビュー表示中で同じカード選択なら or not
+  lesson = patchUpdates(lesson, updatesList[updatesList.length - 1]);
+
+  // TODO: スキルカード使用
+  // TODO: スキルカード使用時トリガー
+  // TODO: スキルカード使用による状態修正増加時トリガー
+
+  return {
+    ...lessonGamePlay,
+    updates: updatesList.flat(),
+  };
+};
 
 /**
  * レッスンのターンを終了する
@@ -105,24 +134,7 @@ const endLessonTurn = (lessonGamePlay: LessonGamePlay): LessonGamePlay => {
   // TODO: ターン終了時トリガー
   // TODO: 小目標発動
   // TODO: 手札を捨てる
-  return newLessonGamePlay;
-};
-
-/**
- * スキルカードを選択する
- *
- * - スキルカードを選択し、結果のプレビュー表示または使用を行う
- * - TODO: Pアイテムなどによる誘発された効果も、プレビューに反映されてる？
- */
-export const selectCard = (
-  lessonGamePlay: LessonGamePlay,
-  cardInHandIndex: number,
-): LessonGamePlay => {
-  let newLessonGamePlay = lessonGamePlay;
-  // TODO: もしプレビュー表示中で同じカード選択なら or not
-  // TODO: スキルカード使用
-  // TODO: スキルカード使用時トリガー
-  // TODO: スキルカード使用による状態修正増加時トリガー
+  // TODO: ターン数によるゲーム終了判定
   return newLessonGamePlay;
 };
 

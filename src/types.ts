@@ -911,6 +911,8 @@ export type Lesson = {
   lastTurnNumber: number;
   /** 除外されたカード群、原文は「除外」、山札の再生成時に含まれないカード群 */
   removedCardPile: Array<Card["id"]>;
+  /** 選択中の手札インデックス */
+  selectedCardInHandIndex: number | undefined;
   /**
    * スコア
    *
@@ -1076,6 +1078,11 @@ export type LessonUpdateQuery = (
       kind: "score";
       actual: number;
       max: number;
+    }
+  | {
+      /** 手札の選択状態 */
+      kind: "selectedCardInHandIndex";
+      value: Lesson["selectedCardInHandIndex"];
     }
   | {
       kind: "turnNumberIncrease";
