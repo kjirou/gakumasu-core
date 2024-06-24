@@ -35,7 +35,8 @@ import {
 } from "./types";
 import {
   drawCardsOnLessonStart,
-  selectCardOnUserInput,
+  previewCardUsage,
+  useCard,
 } from "./lesson-mutation";
 import { handSizeOnLessonStart, patchUpdates } from "./models";
 import { shuffleArray } from "./utils";
@@ -105,6 +106,7 @@ export const startLessonTurn = (
  *
  * - スキルカードを選択し、結果のプレビュー表示または使用を行う
  * - TODO: Pアイテムなどによる誘発された効果も、プレビューに反映されてる？
+ * - TODO: 手札のインデックスが存在しないときのバリデーション
  *
  * @param selectedCardInHandIndex 選択した手札のインデックス。 undefined は選択状態解除を意味し、本家UIでは選択中にスキルカード以外の部分をタップすることに相当する。
  */
@@ -116,19 +118,28 @@ export const selectCard = (
   let lesson = lessonGamePlay.initialLesson;
   let historyResultIndex = 1;
 
-  // TODO: もしプレビュー表示中で同じカード選択なら or not
   lesson = patchUpdates(lesson, updatesList[updatesList.length - 1]);
-  updatesList = [
-    ...updatesList,
-    selectCardOnUserInput(lesson, {
+  // 選択中のスキルカードを更に選択した場合は使用する。それ以外は、プレビュー表示かプレビュー表示解除を行う。
+  if (
+    lesson.selectedCardInHandIndex === selectedCardInHandIndex &&
+    selectedCardInHandIndex !== undefined
+  ) {
+    const result = useCard(lesson, historyResultIndex, {
       selectedCardInHandIndex: selectedCardInHandIndex,
-      historyResultIndex: historyResultIndex,
-    }),
-  ];
+    });
+    updatesList = [...updatesList, result.updates];
+    historyResultIndex = result.nextHistoryResultIndex;
 
-  // TODO: スキルカード使用
-  // TODO: スキルカード使用時トリガー
-  // TODO: スキルカード使用による状態修正増加時トリガー
+    // TODO: スキルカード使用
+    // TODO: スキルカード使用時トリガー
+    // TODO: スキルカード使用による状態修正増加時トリガー
+  } else {
+    const result = previewCardUsage(lesson, historyResultIndex, {
+      selectedCardInHandIndex: selectedCardInHandIndex,
+    });
+    updatesList = [...updatesList, result.updates];
+    historyResultIndex = result.nextHistoryResultIndex;
+  }
 
   return {
     ...lessonGamePlay,

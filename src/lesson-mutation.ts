@@ -1,4 +1,4 @@
-import { handSizeOnLessonStart } from "./models";
+import { getCardContentDefinition } from "./card";
 import type { Card, GetRandom, Lesson, LessonUpdateQuery } from "./types";
 import { shuffleArray } from "./utils";
 
@@ -37,6 +37,11 @@ export const drawCardsFromDeck = (
     discardPile: newDiscardPile,
     drawnCards,
   };
+};
+
+type LessonMutationResult = {
+  nextHistoryResultIndex: LessonUpdateQuery["reason"]["historyResultIndex"];
+  updates: LessonUpdateQuery[];
 };
 
 /**
@@ -103,22 +108,40 @@ export const drawCardsOnLessonStart = (
  *
  * - TODO: 選択→選択解除、を繰り返すことで無限に更新クエリが増えてしまう問題。対策するなら historyResultIndex のスコープ内で圧縮処理を別に入れる。
  */
-export const selectCardOnUserInput = (
+export const previewCardUsage = (
   lesson: Lesson,
+  historyResultIndex: LessonUpdateQuery["reason"]["historyResultIndex"],
   params: {
-    historyResultIndex: LessonUpdateQuery["reason"]["historyResultIndex"];
     selectedCardInHandIndex: number | undefined;
   },
-): LessonUpdateQuery[] => {
-  return [
-    {
-      kind: "selectedCardInHandIndex",
-      index: params.selectedCardInHandIndex,
-      reason: {
-        kind: "cardUsagePreview",
-        historyTurnNumber: lesson.turnNumber,
-        historyResultIndex: params.historyResultIndex,
+): LessonMutationResult => {
+  return {
+    nextHistoryResultIndex: historyResultIndex + 1,
+    updates: [
+      {
+        kind: "selectedCardInHandIndex",
+        index: params.selectedCardInHandIndex,
+        reason: {
+          kind: "cardUsagePreview",
+          historyTurnNumber: lesson.turnNumber,
+          historyResultIndex,
+        },
       },
-    },
-  ];
+    ],
+  };
+};
+
+export const useCard = (
+  lesson: Lesson,
+  historyResultIndex: LessonUpdateQuery["reason"]["historyResultIndex"],
+  params: {
+    selectedCardInHandIndex: number;
+  },
+): LessonMutationResult => {
+  const cardId = lesson.hand[params.selectedCardInHandIndex];
+  const card = lesson.cards.find((card) => card.id === cardId);
+  if (card === undefined) {
+    throw new Error("Card not found");
+  }
+  const cardContent = getCardContentDefinition(card);
 };
