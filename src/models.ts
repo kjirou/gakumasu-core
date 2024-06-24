@@ -177,6 +177,13 @@ export const patchUpdates = (
         };
         break;
       }
+      case "selectedCardInHandIndex": {
+        newLesson = {
+          ...newLesson,
+          selectedCardInHandIndex: update.index,
+        };
+        break;
+      }
       // TODO: 後で never を使うのに書き直す
       default: {
         throw new Error(`Unexpected update kind: ${update.kind}`);

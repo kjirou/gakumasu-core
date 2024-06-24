@@ -981,6 +981,10 @@ type LessonUpdateQueryReason = (
       cardId: Card["id"];
     }
   | {
+      /** スキルカード使用プレビュー */
+      kind: "cardUsagePreview";
+    }
+  | {
       /** スキルカード使用時トリガーにより発動した効果 */
       kind: "cardUsageTrigger";
     }
@@ -1082,7 +1086,7 @@ export type LessonUpdateQuery = (
   | {
       /** 手札の選択状態 */
       kind: "selectedCardInHandIndex";
-      value: Lesson["selectedCardInHandIndex"];
+      index: Lesson["selectedCardInHandIndex"];
     }
   | {
       kind: "turnNumberIncrease";

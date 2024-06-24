@@ -33,7 +33,10 @@ import {
   LessonGamePlay,
   LessonUpdateQuery,
 } from "./types";
-import { drawCardsOnLessonStart } from "./lesson-mutation";
+import {
+  drawCardsOnLessonStart,
+  selectCardOnUserInput,
+} from "./lesson-mutation";
 import { handSizeOnLessonStart, patchUpdates } from "./models";
 import { shuffleArray } from "./utils";
 
@@ -69,6 +72,10 @@ export const startLessonTurn = (
   let lesson = lessonGamePlay.initialLesson;
   let historyResultIndex = 1;
 
+  // TODO: ターン数増加
+
+  // TODO: 1ターン目なら、レッスン開始時トリガー
+
   // 手札を山札から引く
   lesson = patchUpdates(lesson, updatesList[updatesList.length - 1]);
   updatesList = [
@@ -81,8 +88,6 @@ export const startLessonTurn = (
     }),
   ];
   historyResultIndex++;
-
-  // TODO: レッスン開始時トリガー
 
   // TODO: ターン開始時トリガー
 
@@ -101,11 +106,11 @@ export const startLessonTurn = (
  * - スキルカードを選択し、結果のプレビュー表示または使用を行う
  * - TODO: Pアイテムなどによる誘発された効果も、プレビューに反映されてる？
  *
- * @param cardInHandIndex 選択した手札のインデックス。 undefined は選択状態解除を意味し、本家UIでは選択中にスキルカード以外の部分をタップすることに相当する。
+ * @param selectedCardInHandIndex 選択した手札のインデックス。 undefined は選択状態解除を意味し、本家UIでは選択中にスキルカード以外の部分をタップすることに相当する。
  */
 export const selectCard = (
   lessonGamePlay: LessonGamePlay,
-  cardInHandIndex: number | undefined,
+  selectedCardInHandIndex: number | undefined,
 ): LessonGamePlay => {
   let updatesList = [lessonGamePlay.updates];
   let lesson = lessonGamePlay.initialLesson;
@@ -113,6 +118,13 @@ export const selectCard = (
 
   // TODO: もしプレビュー表示中で同じカード選択なら or not
   lesson = patchUpdates(lesson, updatesList[updatesList.length - 1]);
+  updatesList = [
+    ...updatesList,
+    selectCardOnUserInput(lesson, {
+      selectedCardInHandIndex: selectedCardInHandIndex,
+      historyResultIndex: historyResultIndex,
+    }),
+  ];
 
   // TODO: スキルカード使用
   // TODO: スキルカード使用時トリガー

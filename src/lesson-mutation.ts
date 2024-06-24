@@ -97,3 +97,28 @@ export const drawCardsOnLessonStart = (
   }
   return updates;
 };
+
+/**
+ * ユーザー入力により手札を選択するか選択解除する
+ *
+ * - TODO: 選択→選択解除、を繰り返すことで無限に更新クエリが増えてしまう問題。対策するなら historyResultIndex のスコープ内で圧縮処理を別に入れる。
+ */
+export const selectCardOnUserInput = (
+  lesson: Lesson,
+  params: {
+    historyResultIndex: LessonUpdateQuery["reason"]["historyResultIndex"];
+    selectedCardInHandIndex: number | undefined;
+  },
+): LessonUpdateQuery[] => {
+  return [
+    {
+      kind: "selectedCardInHandIndex",
+      index: params.selectedCardInHandIndex,
+      reason: {
+        kind: "cardUsagePreview",
+        historyTurnNumber: lesson.turnNumber,
+        historyResultIndex: params.historyResultIndex,
+      },
+    },
+  ];
+};

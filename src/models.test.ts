@@ -193,4 +193,23 @@ describe("patchUpdates", () => {
       expect(lesson.removedCardPile).toStrictEqual(["2", "3"]);
     });
   });
+  describe("selectedCardInHandIndex", () => {
+    test("it works", () => {
+      const lessonMock = {
+        selectedCardInHandIndex: undefined,
+      } as Lesson;
+      const lesson = patchUpdates(lessonMock, [
+        {
+          kind: "selectedCardInHandIndex",
+          index: 1,
+          reason: {
+            kind: "lessonStartTrigger",
+            historyTurnNumber: 1,
+            historyResultIndex: 1,
+          },
+        },
+      ]);
+      expect(lesson.selectedCardInHandIndex).toBe(1);
+    });
+  });
 });
