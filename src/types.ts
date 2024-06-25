@@ -975,7 +975,7 @@ type LessonHistoryRecord =
       kind: "trouble";
     };
 
-type LessonUpdateQueryReason = (
+export type LessonUpdateQueryReason = (
   | {
       /** スキルカード使用 */
       kind: "cardUsage";

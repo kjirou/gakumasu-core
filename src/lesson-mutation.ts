@@ -1,4 +1,3 @@
-import { getCardContentDefinition } from "./card";
 import type {
   ActionCost,
   Card,
@@ -6,9 +5,18 @@ import type {
   GetRandom,
   Lesson,
   LessonUpdateQuery,
+  LessonUpdateQueryReason,
   Modifier,
 } from "./types";
 import { shuffleArray } from "./utils";
+
+const getCardContentDefinition = (card: Card): CardContentDefinition => {
+  // TODO: レッスン中強化やサポートカードによる強化
+  return card.original.definition.enhanced !== undefined &&
+    card.original.enhanced
+    ? card.original.definition.enhanced
+    : card.original.definition.base;
+};
 
 /**
  * 山札から指定数のスキルカードを引く
@@ -146,8 +154,8 @@ const calculateActualAndMaxComsumution = (
   costValue: number,
 ) => {
   return {
-    actual: costValue > resourceValue ? resourceValue : costValue,
-    max: costValue,
+    actual: costValue > resourceValue ? -resourceValue : -costValue,
+    max: -costValue,
     restCost: resourceValue > costValue ? 0 : costValue - resourceValue,
   };
 };
@@ -199,24 +207,32 @@ export const calculateCostConsumption = (
       const result = calculateActualAndMaxComsumution(idol.life, restCost);
       updates.push({
         kind: "life",
-        actual: result.actual,
-        max: result.max,
+        actual: -result.actual,
+        max: -result.max,
       });
       return updates;
     }
-    case "goodCondition": {
-      return [];
-    }
     case "life": {
-      const result = calculateActualAndMaxComsumution(idol.life, cost.value);
       return [
         {
           kind: "life",
-          actual: result.actual,
-          max: result.max,
+          actual: -cost.value,
+          max: -cost.value,
         },
       ];
     }
+    case "focus":
+    case "goodCondition":
+    case "motivation":
+    case "positiveImpression":
+      return [
+        {
+          kind: "modifier",
+          modifierKind: cost.kind,
+          actual: -cost.value,
+          max: -cost.value,
+        },
+      ];
     default:
       const unreachable: never = cost.kind;
       throw new Error(`Unreachable statement`);
@@ -236,4 +252,43 @@ export const useCard = (
     throw new Error("Card not found");
   }
   const cardContent = getCardContentDefinition(card);
+  const beforeVitality = lesson.idol.vitality;
+  const updates: LessonUpdateQuery[] = [];
+  let nextHistoryResultIndex = historyResultIndex;
+
+  // コスト消費
+  const costConsumptions = calculateCostConsumption(lesson, cardContent.cost);
+  for (const costConsumption of costConsumptions) {
+    const reason: LessonUpdateQueryReason = {
+      kind: "cardUsage",
+      cardId: card.id,
+      historyTurnNumber: lesson.turnNumber,
+      historyResultIndex: nextHistoryResultIndex,
+    };
+    if (costConsumption.kind === "modifier") {
+      updates.push({
+        kind: costConsumption.kind,
+        modifierKind: costConsumption.modifierKind,
+        actual: costConsumption.actual,
+        max: costConsumption.max,
+        reason,
+      });
+    } else {
+      updates.push({
+        kind: costConsumption.kind,
+        actual: costConsumption.actual,
+        max: costConsumption.max,
+        reason,
+      });
+    }
+  }
+
+  // TODO: スキルカード使用時トリガー
+
+  // TODO: スキルカード使用による状態修正増加時トリガー
+
+  return {
+    nextHistoryResultIndex,
+    updates,
+  };
 };
