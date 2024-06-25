@@ -82,6 +82,7 @@ export const createIdolInProduction = (params: {
 const createIdol = (params: { idolInProduction: IdolInProduction }): Idol => {
   return {
     life: params.idolInProduction.life,
+    modifiers: [],
     original: params.idolInProduction,
     totalCardUsageCount: 0,
     vitality: 0,

@@ -100,6 +100,7 @@ describe("createLessonGamePlay", () => {
           original: idolInProduction,
           life: 32,
           vitality: 0,
+          modifiers: [],
           totalCardUsageCount: 0,
         },
         cards: expect.any(Array),

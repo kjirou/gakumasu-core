@@ -878,6 +878,7 @@ export type IdolInProduction = {
  */
 export type Idol = {
   life: number;
+  modifiers: Modifier[];
   original: IdolInProduction;
   /** 本レッスン中にスキルカードを使用した回数、関連する原文は「レッスン中に使用したスキルカード{n}枚ごとに、」 */
   totalCardUsageCount: number;
