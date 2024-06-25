@@ -1,5 +1,13 @@
 import { getCardContentDefinition } from "./card";
-import type { Card, GetRandom, Lesson, LessonUpdateQuery } from "./types";
+import type {
+  ActionCost,
+  Card,
+  CardContentDefinition,
+  GetRandom,
+  Lesson,
+  LessonUpdateQuery,
+  Modifier,
+} from "./types";
 import { shuffleArray } from "./utils";
 
 /**
@@ -104,8 +112,10 @@ export const drawCardsOnLessonStart = (
 };
 
 /**
- * ユーザー入力により手札を選択するか選択解除する
+ * 手札使用のプレビュー表示をするか表示を解除する
  *
+ * - コストを満たさない状態でもプレビューはできる
+ *   - 足りないコストは、ゼロとして差分表示される
  * - TODO: 選択→選択解除、を繰り返すことで無限に更新クエリが増えてしまう問題。対策するなら historyResultIndex のスコープ内で圧縮処理を別に入れる。
  */
 export const previewCardUsage = (
@@ -129,6 +139,88 @@ export const previewCardUsage = (
       },
     ],
   };
+};
+
+const calculateActualAndMaxComsumution = (
+  resourceValue: number,
+  costValue: number,
+) => {
+  return {
+    actual: costValue > resourceValue ? resourceValue : costValue,
+    max: costValue,
+    restCost: resourceValue > costValue ? 0 : costValue - resourceValue,
+  };
+};
+
+/**
+ * LessonUpdateQuery からコスト消費関係部分を抜き出したもの
+ *
+ * - TODO: LessonUpdateQuery と型を共通化する
+ */
+type CostConsumptionUpdate = (
+  | {
+      kind: "life" | "vitality";
+    }
+  | {
+      kind: "modifier";
+      modifierKind: Modifier["kind"];
+    }
+) & {
+  actual: number;
+  max: number;
+};
+
+/**
+ * コスト消費を計算する
+ *
+ * - 消費分のコストは足りる前提で呼び出す
+ */
+export const calculateCostConsumption = (
+  lesson: Lesson,
+  cost: ActionCost,
+): CostConsumptionUpdate[] => {
+  const idol = lesson.idol;
+  switch (cost.kind) {
+    case "normal": {
+      const updates: CostConsumptionUpdate[] = [];
+      let restCost = cost.value;
+      if (idol.vitality > 0) {
+        const result = calculateActualAndMaxComsumution(
+          idol.vitality,
+          restCost,
+        );
+        restCost = result.restCost;
+        updates.push({
+          kind: "vitality",
+          actual: result.actual,
+          max: result.max,
+        });
+      }
+      const result = calculateActualAndMaxComsumution(idol.life, restCost);
+      updates.push({
+        kind: "life",
+        actual: result.actual,
+        max: result.max,
+      });
+      return updates;
+    }
+    case "goodCondition": {
+      return [];
+    }
+    case "life": {
+      const result = calculateActualAndMaxComsumution(idol.life, cost.value);
+      return [
+        {
+          kind: "life",
+          actual: result.actual,
+          max: result.max,
+        },
+      ];
+    }
+    default:
+      const unreachable: never = cost.kind;
+      throw new Error(`Unreachable statement`);
+  }
 };
 
 export const useCard = (

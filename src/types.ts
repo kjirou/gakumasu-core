@@ -1093,7 +1093,8 @@ export type LessonUpdateQuery = (
     }
   | {
       kind: "vitality";
-      value: number;
+      actual: number;
+      max: number;
     }
 ) & { reason: LessonUpdateQueryReason };
 
