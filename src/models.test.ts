@@ -25,7 +25,7 @@ describe("createIdolInProduction", () => {
   test("it creates an idol in production", () => {
     const idGenerator = createIdGenerator();
     const idolInProduction = createIdolInProduction({
-      id: "hanamisaki-r-1",
+      idolDefinitionId: "hanamisaki-r-1",
       cards: [
         {
           id: idGenerator(),
@@ -70,7 +70,7 @@ describe("createLessonGamePlay", () => {
   test("it creates a lesson game play", () => {
     const idGenerator = createIdGenerator();
     const idolInProduction = createIdolInProduction({
-      id: "hanamisaki-r-1",
+      idolDefinitionId: "hanamisaki-r-1",
       cards: [
         {
           id: idGenerator(),

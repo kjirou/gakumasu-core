@@ -610,10 +610,16 @@ export type CardInProduction = {
   /**
    * 有効か
    *
-   * - 削除・変換・強化した場合、対象は false になり、変わりに新しいカードを追加する
+   * - 削除・変換・強化した場合、対象は false になる。強化は、新しいスキルカードとして追加する。
    */
   enabled: boolean;
   enhanced: boolean;
+  /**
+   * IdolInProduction["deck"] 内で一意のID
+   *
+   * - 本番では、常に IdGenerator で生成する
+   * - テストでは、IdGenerator 生成と被らない任意の値の設定が可能
+   */
   id: string;
 };
 
@@ -628,6 +634,7 @@ export type Card = {
    *
    * - 1レッスン内で一意
    * - 所持しているスキルカードは CardInProduction["id"] を複製する、一方で生成したスキルカードは新たにIDを生成して割り振る
+   *   - CardInProduction["id"] を複製する仕様を維持しないと、テストコードが複雑になる
    */
   id: string;
   original: CardInProduction;

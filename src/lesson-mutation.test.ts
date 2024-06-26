@@ -1,7 +1,22 @@
-import { Card, IdolInProduction, Lesson } from "./types";
+import {
+  Card,
+  CardInProduction,
+  IdolDefinition,
+  IdolInProduction,
+  Lesson,
+} from "./types";
 import { getCardDataById } from "./data/card";
-import { drawCardsFromDeck, drawCardsOnLessonStart } from "./lesson-mutation";
-import { prepareCardsForLesson } from "./models";
+import {
+  drawCardsFromDeck,
+  drawCardsOnLessonStart,
+  useCard,
+} from "./lesson-mutation";
+import {
+  createIdolInProduction,
+  createLesson,
+  prepareCardsForLesson,
+} from "./models";
+import { createIdGenerator } from "./utils";
 
 describe("drawCardsFromDeck", () => {
   test("山札がなくならない状態で1枚引いた時、1枚引けて、山札が1枚減る", () => {
@@ -84,5 +99,150 @@ describe("drawCardsOnLessonStart", () => {
     expect(updates[1].cardIds).toHaveLength(1);
     expect(updates[2].kind).toBe("discardPile");
     expect(updates[2].cardIds).toHaveLength(0);
+  });
+});
+describe("useCard", () => {
+  const createLessonForTest = (
+    overwrites: Partial<Parameters<typeof createIdolInProduction>[0]>,
+  ): Lesson => {
+    const idolInProduction = createIdolInProduction({
+      // Pアイテムが最終ターンにならないと発動しないので、テストデータとして優秀
+      idolDefinitionId: "shinosawahiro-r-1",
+      cards: [],
+      specificCardEnhanced: false,
+      specificProducerItemEnhanced: false,
+      idGenerator: createIdGenerator(),
+      ...overwrites,
+    });
+    return createLesson({
+      getRandom: Math.random,
+      idolInProduction,
+      lastTurnNumber: 6,
+    });
+  };
+  describe("コスト消費", () => {
+    test("全て元気で賄った時のnormal", () => {
+      const lesson = createLessonForTest({
+        cards: [
+          {
+            id: "a",
+            definition: getCardDataById("apirunokihon"),
+            enabled: true,
+            enhanced: false,
+          },
+        ],
+      });
+      lesson.hand = ["a"];
+      lesson.idol.vitality = 4;
+      const { updates } = useCard(lesson, 2, {
+        selectedCardInHandIndex: 0,
+      });
+      expect(updates.find((e) => e.kind === "vitality")).toStrictEqual({
+        kind: "vitality",
+        actual: -4,
+        max: -4,
+        reason: {
+          kind: "cardUsage",
+          cardId: "a",
+          historyTurnNumber: 1,
+          historyResultIndex: 2,
+        },
+      });
+      expect(updates.find((e) => e.kind === "life")).toBeUndefined();
+    });
+    test("一部を元気で賄った時のnormal", () => {
+      const lesson = createLessonForTest({
+        cards: [
+          {
+            id: "a",
+            definition: getCardDataById("apirunokihon"),
+            enabled: true,
+            enhanced: false,
+          },
+        ],
+      });
+      lesson.hand = ["a"];
+      lesson.idol.vitality = 3;
+      const { updates } = useCard(lesson, 2, {
+        selectedCardInHandIndex: 0,
+      });
+      expect(updates.find((e) => e.kind === "vitality")).toStrictEqual({
+        kind: "vitality",
+        actual: -3,
+        max: -4,
+        reason: {
+          kind: "cardUsage",
+          cardId: "a",
+          historyTurnNumber: 1,
+          historyResultIndex: 2,
+        },
+      });
+      expect(updates.find((e) => e.kind === "life")).toStrictEqual({
+        kind: "life",
+        actual: -1,
+        max: -1,
+        reason: {
+          kind: "cardUsage",
+          cardId: "a",
+          historyTurnNumber: 1,
+          historyResultIndex: 2,
+        },
+      });
+    });
+    test("life", () => {
+      const lesson = createLessonForTest({
+        cards: [
+          {
+            id: "a",
+            definition: getCardDataById("genkinaaisatsu"),
+            enabled: true,
+            enhanced: false,
+          },
+        ],
+      });
+      lesson.hand = ["a"];
+      const { updates } = useCard(lesson, 2, {
+        selectedCardInHandIndex: 0,
+      });
+      expect(updates.find((e) => e.kind === "life")).toStrictEqual({
+        kind: "life",
+        actual: -4,
+        max: -4,
+        reason: {
+          kind: "cardUsage",
+          cardId: "a",
+          historyTurnNumber: 1,
+          historyResultIndex: 2,
+        },
+      });
+    });
+    test("modifierのひとつ", () => {
+      const lesson = createLessonForTest({
+        cards: [
+          {
+            id: "a",
+            definition: getCardDataById("minnadaisuki"),
+            enabled: true,
+            enhanced: false,
+          },
+        ],
+      });
+      lesson.hand = ["a"];
+      const { updates } = useCard(lesson, 2, {
+        selectedCardInHandIndex: 0,
+      });
+      expect(updates.find((e) => e.kind === "modifier")).toStrictEqual({
+        kind: "modifier",
+        modifierKind: "motivation",
+        actual: -3,
+        max: -3,
+        reason: {
+          kind: "cardUsage",
+          cardId: "a",
+          historyTurnNumber: 1,
+          historyResultIndex: 2,
+        },
+      });
+    });
   });
 });

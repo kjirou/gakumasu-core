@@ -183,7 +183,7 @@ type CostConsumptionUpdate = (
  *
  * - 消費分のコストは足りる前提で呼び出す
  */
-export const calculateCostConsumption = (
+const calculateCostConsumption = (
   lesson: Lesson,
   cost: ActionCost,
 ): CostConsumptionUpdate[] => {
@@ -204,12 +204,14 @@ export const calculateCostConsumption = (
           max: result.max,
         });
       }
-      const result = calculateActualAndMaxComsumution(idol.life, restCost);
-      updates.push({
-        kind: "life",
-        actual: -result.actual,
-        max: -result.max,
-      });
+      if (restCost > 0) {
+        const result = calculateActualAndMaxComsumution(idol.life, restCost);
+        updates.push({
+          kind: "life",
+          actual: result.actual,
+          max: result.max,
+        });
+      }
       return updates;
     }
     case "life": {
@@ -247,14 +249,21 @@ export const useCard = (
   },
 ): LessonMutationResult => {
   const cardId = lesson.hand[params.selectedCardInHandIndex];
+  if (cardId === undefined) {
+    throw new Error(
+      `Card not found in hand: selectedCardInHandIndex=${params.selectedCardInHandIndex}`,
+    );
+  }
   const card = lesson.cards.find((card) => card.id === cardId);
   if (card === undefined) {
-    throw new Error("Card not found");
+    throw new Error(`Card not found in cards: cardId=${cardId}`);
   }
   const cardContent = getCardContentDefinition(card);
   const beforeVitality = lesson.idol.vitality;
   const updates: LessonUpdateQuery[] = [];
   let nextHistoryResultIndex = historyResultIndex;
+
+  // TODO: 手札を捨札か除外へ移動
 
   // コスト消費
   const costConsumptions = calculateCostConsumption(lesson, cardContent.cost);
