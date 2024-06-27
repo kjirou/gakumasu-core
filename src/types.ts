@@ -510,6 +510,9 @@ export type CardUsageCondition =
       percentage: number;
     };
 
+/**
+ * コストとして消費されることがある状態修正の種類
+ */
 export type ActionCostModifierKind =
   | "focus"
   | "goodCondition"
