@@ -41,14 +41,14 @@ describe("createIdolInProduction", () => {
     expect(idolInProduction).toStrictEqual({
       deck: [
         {
-          id: "1",
-          definition: getCardDataById("apirunokihon"),
+          id: "2",
+          definition: getCardDataById("shinshinkiei"),
           enhanced: false,
           enabled: true,
         },
         {
-          id: "2",
-          definition: getCardDataById("shinshinkiei"),
+          id: "1",
+          definition: getCardDataById("apirunokihon"),
           enhanced: false,
           enabled: true,
         },

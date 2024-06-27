@@ -263,9 +263,47 @@ export const useCard = (
   const updates: LessonUpdateQuery[] = [];
   let nextHistoryResultIndex = historyResultIndex;
 
-  // TODO: 手札を捨札か除外へ移動
+  //
+  // 手札を捨札か除外へ移動
+  //
+  updates.push({
+    kind: "hand",
+    cardIds: lesson.hand.filter((id) => id !== cardId),
+    reason: {
+      kind: "cardUsage",
+      cardId,
+      historyTurnNumber: lesson.turnNumber,
+      historyResultIndex: nextHistoryResultIndex,
+    },
+  });
+  if (cardContent.usableOncePerLesson) {
+    updates.push({
+      kind: "removedCardPile",
+      cardIds: [...lesson.removedCardPile, cardId],
+      reason: {
+        kind: "cardUsage",
+        cardId,
+        historyTurnNumber: lesson.turnNumber,
+        historyResultIndex: nextHistoryResultIndex,
+      },
+    });
+  } else {
+    updates.push({
+      kind: "discardPile",
+      cardIds: [...lesson.discardPile, cardId],
+      reason: {
+        kind: "cardUsage",
+        cardId,
+        historyTurnNumber: lesson.turnNumber,
+        historyResultIndex: nextHistoryResultIndex,
+      },
+    });
+  }
+  nextHistoryResultIndex++;
 
+  //
   // コスト消費
+  //
   const costConsumptions = calculateCostConsumption(lesson, cardContent.cost);
   for (const costConsumption of costConsumptions) {
     const reason: LessonUpdateQueryReason = {
@@ -291,10 +329,15 @@ export const useCard = (
       });
     }
   }
+  nextHistoryResultIndex++;
 
+  //
   // TODO: スキルカード使用時トリガー
+  //
 
+  //
   // TODO: スキルカード使用による状態修正増加時トリガー
+  //
 
   return {
     nextHistoryResultIndex,

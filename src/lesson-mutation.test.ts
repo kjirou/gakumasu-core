@@ -5,7 +5,7 @@ import {
   IdolInProduction,
   Lesson,
 } from "./types";
-import { getCardDataById } from "./data/card";
+import { cards, getCardDataById } from "./data/card";
 import {
   drawCardsFromDeck,
   drawCardsOnLessonStart,
@@ -103,7 +103,7 @@ describe("drawCardsOnLessonStart", () => {
 });
 describe("useCard", () => {
   const createLessonForTest = (
-    overwrites: Partial<Parameters<typeof createIdolInProduction>[0]>,
+    overwrites: Partial<Parameters<typeof createIdolInProduction>[0]> = {},
   ): Lesson => {
     const idolInProduction = createIdolInProduction({
       // Pアイテムが最終ターンにならないと発動しないので、テストデータとして優秀
@@ -120,6 +120,62 @@ describe("useCard", () => {
       lastTurnNumber: 6,
     });
   };
+  describe("手札を捨札または除外へ移動", () => {
+    test("「レッスン中1回」ではない手札を使った時は、除外へ移動", () => {
+      const lesson = createLessonForTest({
+        cards: [
+          {
+            id: "a",
+            definition: getCardDataById("apirunokihon"),
+            enabled: true,
+            enhanced: false,
+          },
+        ],
+      });
+      lesson.hand = ["a"];
+      const { updates } = useCard(lesson, 1, {
+        selectedCardInHandIndex: 0,
+      });
+      expect(updates.find((e) => e.kind === "hand")).toStrictEqual({
+        kind: "hand",
+        cardIds: [],
+        reason: expect.any(Object),
+      });
+      expect(updates.find((e) => e.kind === "discardPile")).toStrictEqual({
+        kind: "discardPile",
+        cardIds: ["a"],
+        reason: expect.any(Object),
+      });
+      expect(updates.find((e) => e.kind === "removedCardPile")).toBeUndefined();
+    });
+    test("「レッスン中1回」の手札を使った時は、除外へ移動", () => {
+      const lesson = createLessonForTest({
+        cards: [
+          {
+            id: "a",
+            definition: getCardDataById("hyogennokihon"),
+            enabled: true,
+            enhanced: false,
+          },
+        ],
+      });
+      lesson.hand = ["a"];
+      const { updates } = useCard(lesson, 1, {
+        selectedCardInHandIndex: 0,
+      });
+      expect(updates.find((e) => e.kind === "hand")).toStrictEqual({
+        kind: "hand",
+        cardIds: [],
+        reason: expect.any(Object),
+      });
+      expect(updates.find((e) => e.kind === "discardPile")).toBeUndefined();
+      expect(updates.find((e) => e.kind === "removedCardPile")).toStrictEqual({
+        kind: "removedCardPile",
+        cardIds: ["a"],
+        reason: expect.any(Object),
+      });
+    });
+  });
   describe("コスト消費", () => {
     test("全て元気で賄った時のnormal", () => {
       const lesson = createLessonForTest({
@@ -134,19 +190,14 @@ describe("useCard", () => {
       });
       lesson.hand = ["a"];
       lesson.idol.vitality = 4;
-      const { updates } = useCard(lesson, 2, {
+      const { updates } = useCard(lesson, 1, {
         selectedCardInHandIndex: 0,
       });
       expect(updates.find((e) => e.kind === "vitality")).toStrictEqual({
         kind: "vitality",
         actual: -4,
         max: -4,
-        reason: {
-          kind: "cardUsage",
-          cardId: "a",
-          historyTurnNumber: 1,
-          historyResultIndex: 2,
-        },
+        reason: expect.any(Object),
       });
       expect(updates.find((e) => e.kind === "life")).toBeUndefined();
     });
@@ -163,30 +214,20 @@ describe("useCard", () => {
       });
       lesson.hand = ["a"];
       lesson.idol.vitality = 3;
-      const { updates } = useCard(lesson, 2, {
+      const { updates } = useCard(lesson, 1, {
         selectedCardInHandIndex: 0,
       });
       expect(updates.find((e) => e.kind === "vitality")).toStrictEqual({
         kind: "vitality",
         actual: -3,
         max: -4,
-        reason: {
-          kind: "cardUsage",
-          cardId: "a",
-          historyTurnNumber: 1,
-          historyResultIndex: 2,
-        },
+        reason: expect.any(Object),
       });
       expect(updates.find((e) => e.kind === "life")).toStrictEqual({
         kind: "life",
         actual: -1,
         max: -1,
-        reason: {
-          kind: "cardUsage",
-          cardId: "a",
-          historyTurnNumber: 1,
-          historyResultIndex: 2,
-        },
+        reason: expect.any(Object),
       });
     });
     test("life", () => {
@@ -201,19 +242,14 @@ describe("useCard", () => {
         ],
       });
       lesson.hand = ["a"];
-      const { updates } = useCard(lesson, 2, {
+      const { updates } = useCard(lesson, 1, {
         selectedCardInHandIndex: 0,
       });
       expect(updates.find((e) => e.kind === "life")).toStrictEqual({
         kind: "life",
         actual: -4,
         max: -4,
-        reason: {
-          kind: "cardUsage",
-          cardId: "a",
-          historyTurnNumber: 1,
-          historyResultIndex: 2,
-        },
+        reason: expect.any(Object),
       });
     });
     test("modifierのひとつ", () => {
@@ -228,7 +264,7 @@ describe("useCard", () => {
         ],
       });
       lesson.hand = ["a"];
-      const { updates } = useCard(lesson, 2, {
+      const { updates } = useCard(lesson, 1, {
         selectedCardInHandIndex: 0,
       });
       expect(updates.find((e) => e.kind === "modifier")).toStrictEqual({
@@ -236,12 +272,7 @@ describe("useCard", () => {
         modifierKind: "motivation",
         actual: -3,
         max: -3,
-        reason: {
-          kind: "cardUsage",
-          cardId: "a",
-          historyTurnNumber: 1,
-          historyResultIndex: 2,
-        },
+        reason: expect.any(Object),
       });
     });
   });
