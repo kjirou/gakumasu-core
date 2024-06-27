@@ -1,5 +1,6 @@
 import type {
   ActionCost,
+  ActionCostModifierKind,
   Card,
   CardContentDefinition,
   GetRandom,
@@ -171,7 +172,7 @@ type CostConsumptionUpdate = (
     }
   | {
       kind: "modifier";
-      modifierKind: Modifier["kind"];
+      modifierKind: ActionCostModifierKind;
     }
 ) & {
   actual: number;

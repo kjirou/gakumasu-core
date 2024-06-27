@@ -172,6 +172,64 @@ export const patchUpdates = (
         };
         break;
       }
+      case "life": {
+        newLesson = {
+          ...newLesson,
+          idol: {
+            ...newLesson.idol,
+            life: newLesson.idol.life + update.actual,
+          },
+        };
+        break;
+      }
+      case "modifier": {
+        const newModifiers = newLesson.idol.modifiers
+          .map((modifier) => {
+            let newModifier = modifier;
+            switch (update.modifierKind) {
+              case "focus":
+              case "motivation":
+              case "positiveImpression":
+                if (
+                  modifier.kind === "focus" ||
+                  modifier.kind === "motivation" ||
+                  modifier.kind === "positiveImpression"
+                ) {
+                  newModifier = {
+                    ...modifier,
+                    amount: modifier.amount + update.actual,
+                  };
+                }
+                break;
+              case "goodCondition":
+                if (modifier.kind === "goodCondition") {
+                  newModifier = {
+                    ...modifier,
+                    duration: modifier.duration + update.actual,
+                  };
+                }
+                break;
+              default:
+                const unreachable: never = update.modifierKind;
+                throw new Error(`Unreachable statement`);
+            }
+            return newModifier;
+          })
+          .filter((modifier) => {
+            return (
+              ("amount" in modifier && modifier.amount > 0) ||
+              ("duration" in modifier && modifier.duration > 0)
+            );
+          });
+        newLesson = {
+          ...newLesson,
+          idol: {
+            ...newLesson.idol,
+            modifiers: newModifiers,
+          },
+        };
+        break;
+      }
       case "removedCardPile": {
         newLesson = {
           ...newLesson,
@@ -183,6 +241,16 @@ export const patchUpdates = (
         newLesson = {
           ...newLesson,
           selectedCardInHandIndex: update.index,
+        };
+        break;
+      }
+      case "vitality": {
+        newLesson = {
+          ...newLesson,
+          idol: {
+            ...newLesson.idol,
+            vitality: newLesson.idol.vitality + update.actual,
+          },
         };
         break;
       }

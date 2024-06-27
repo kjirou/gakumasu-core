@@ -205,7 +205,12 @@ export type Modifier =
       duration: number;
     }
   | {
-      /** 「好印象+{amount}」 */
+      /**
+       * 「好印象+{amount}」
+       *
+       * - とても不思議だが、好調のように「ターン」表記ではないので、 amount にしている
+       *   - 消費する時も、「私がスター」は「好印象消費2」の表記、一方で「国民的アイドル」は「好調消費1ターン」の表記
+       */
       kind: "positiveImpression";
       amount: number;
     };
@@ -505,6 +510,12 @@ export type CardUsageCondition =
       percentage: number;
     };
 
+export type ActionCostModifierKind =
+  | "focus"
+  | "goodCondition"
+  | "motivation"
+  | "positiveImpression";
+
 /**
  * レッスン中の各種コスト
  *
@@ -520,13 +531,7 @@ export type ActionCost = {
    *
    * - "normal" は通常コストで体力または元気を消費する、"life" は体力のみを消費する
    */
-  kind:
-    | "focus"
-    | "goodCondition"
-    | "life"
-    | "motivation"
-    | "normal"
-    | "positiveImpression";
+  kind: "life" | "normal" | ActionCostModifierKind;
   value: number;
 };
 
@@ -1073,12 +1078,14 @@ export type LessonUpdateQuery = (
     }
   | {
       kind: "life";
+      /** アイドルの状態へ実際に影響を与える数値。例えば、残り体力1の時に、トラブルの体力減少で3減らされた時は1になる。 */
       actual: number;
+      /** アイドルの状態へ本来影響を影響を与えはずだった数値。例えば、残り体力1の時に、トラブルの体力減少で3減らされた時は3になる。 */
       max: number;
     }
   | {
       kind: "modifier";
-      modifierKind: Modifier["kind"];
+      modifierKind: ActionCostModifierKind;
       actual: number;
       max: number;
     }
