@@ -1052,17 +1052,7 @@ export type LessonUpdateQueryReason = (
   historyResultIndex: number;
 };
 
-/**
- * レッスン更新クエリ
- *
- * - TODO: ゲーム内履歴のスキルカード使用時トリガーは、スキルカード使用の子として表現されているので、クエリ上は別レコードにするならそれぞれの関連を表現する必要がある
- *
- * - Lesson に対しての1更新を、patch可能なレコードで表現したもの
- * - スキルカード使用・Pアイテム発動・Pアイテム使用・応援/トラブルなどによる、レッスンの状態変化を表現する
- * - このクエリを集計して、UIその他の各種機能に利用することもある
- *   - 具体的には、スキルカード選択時のプレビュー・ゲーム内のレッスン履歴表示・インタラクションやアニメーションなどに利用する
- */
-export type LessonUpdateQuery = (
+export type LessonUpdateQueryDiff =
   | {
       kind: "cardEnhancement";
       cardId: Card["id"];
@@ -1113,8 +1103,21 @@ export type LessonUpdateQuery = (
       kind: "vitality";
       actual: number;
       max: number;
-    }
-) & { reason: LessonUpdateQueryReason };
+    };
+
+/**
+ * レッスン更新クエリ
+ *
+ * - TODO: ゲーム内履歴のスキルカード使用時トリガーは、スキルカード使用の子として表現されているので、クエリ上は別レコードにするならそれぞれの関連を表現する必要がある
+ *
+ * - Lesson に対しての1更新を、patch可能なレコードで表現したもの
+ * - スキルカード使用・Pアイテム発動・Pアイテム使用・応援/トラブルなどによる、レッスンの状態変化を表現する
+ * - このクエリを集計して、UIその他の各種機能に利用することもある
+ *   - 具体的には、スキルカード選択時のプレビュー・ゲーム内のレッスン履歴表示・インタラクションやアニメーションなどに利用する
+ */
+export type LessonUpdateQuery = LessonUpdateQueryDiff & {
+  reason: LessonUpdateQueryReason;
+};
 
 /**
  * レッスン中の状態

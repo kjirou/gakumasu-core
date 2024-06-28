@@ -129,10 +129,6 @@ export const selectCard = (
     });
     updatesList = [...updatesList, result.updates];
     historyResultIndex = result.nextHistoryResultIndex;
-
-    // TODO: スキルカード使用
-    // TODO: スキルカード使用時トリガー
-    // TODO: スキルカード使用による状態修正増加時トリガー
   } else {
     const result = previewCardUsage(lesson, historyResultIndex, {
       selectedCardInHandIndex: selectedCardInHandIndex,
@@ -140,6 +136,8 @@ export const selectCard = (
     updatesList = [...updatesList, result.updates];
     historyResultIndex = result.nextHistoryResultIndex;
   }
+
+  // TODO: スキルカード使用数0ならターン終了
 
   return {
     ...lessonGamePlay,

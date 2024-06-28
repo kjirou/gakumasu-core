@@ -7,6 +7,7 @@ import {
 } from "./types";
 import { cards, getCardDataById } from "./data/card";
 import {
+  addCardsToHandOrDiscardPile,
   drawCardsFromDeck,
   drawCardsOnLessonStart,
   useCard,
@@ -62,10 +63,62 @@ describe("drawCardsFromDeck", () => {
     ]);
   });
 });
+describe("addCardsToHandOrDiscardPile", () => {
+  const testCases: {
+    args: Parameters<typeof addCardsToHandOrDiscardPile>;
+    expected: ReturnType<typeof addCardsToHandOrDiscardPile>;
+  }[] = [
+    {
+      args: [["1", "2", "3", "4", "5"], [], []],
+      expected: {
+        hand: ["1", "2", "3", "4", "5"],
+        discardPile: [],
+      },
+    },
+    {
+      args: [["1", "2", "3", "4", "5", "6", "7"], [], []],
+      expected: {
+        hand: ["1", "2", "3", "4", "5"],
+        discardPile: ["6", "7"],
+      },
+    },
+    {
+      args: [["3", "4", "5"], ["1", "2"], []],
+      expected: {
+        hand: ["1", "2", "3", "4", "5"],
+        discardPile: [],
+      },
+    },
+    {
+      args: [["3", "4", "5", "6", "7"], ["1", "2"], []],
+      expected: {
+        hand: ["1", "2", "3", "4", "5"],
+        discardPile: ["6", "7"],
+      },
+    },
+    {
+      args: [
+        ["8", "9"],
+        ["1", "2", "3", "4", "5"],
+        ["6", "7"],
+      ],
+      expected: {
+        hand: ["1", "2", "3", "4", "5"],
+        discardPile: ["6", "7", "8", "9"],
+      },
+    },
+  ];
+  test.each(testCases)(
+    "Drawn:$args.0, Hand:$args.1, Discard:$args.2 => Hand:$expected.hand, Discard:$expected.discardPile",
+    ({ args, expected }) => {
+      expect(addCardsToHandOrDiscardPile(...args)).toStrictEqual(expected);
+    },
+  );
+});
 describe("drawCardsOnLessonStart", () => {
   test("山札に引く数が残っている時、山札はその分減り、捨札に変化はない", () => {
     const lessonMock = {
-      hand: [] as string[],
+      hand: [] as Lesson["hand"],
       deck: ["1", "2", "3"],
       discardPile: ["4"],
     } as Lesson;
@@ -83,7 +136,7 @@ describe("drawCardsOnLessonStart", () => {
   });
   test("山札に引く数が残っていない時、山札は再構築された上で残りの引く数分減り、捨札は空になる", () => {
     const lessonMock = {
-      hand: [] as string[],
+      hand: [] as Lesson["hand"],
       deck: ["1", "2"],
       discardPile: ["3", "4"],
     } as Lesson;
@@ -99,6 +152,25 @@ describe("drawCardsOnLessonStart", () => {
     expect(updates[1].cardIds).toHaveLength(1);
     expect(updates[2].kind).toBe("discardPile");
     expect(updates[2].cardIds).toHaveLength(0);
+  });
+  test("手札最大数を超える枚数を引いた時、入らないスキルカードは捨札へ移動する", () => {
+    const lessonMock = {
+      hand: [] as Lesson["hand"],
+      deck: ["1", "2", "3", "4", "5", "6"],
+      discardPile: [] as Lesson["discardPile"],
+    } as Lesson;
+    const updates: any = drawCardsOnLessonStart(lessonMock, {
+      count: 6,
+      historyResultIndex: 1,
+      getRandom: Math.random,
+    });
+    expect(updates).toHaveLength(3);
+    expect(updates[0].kind).toBe("hand");
+    expect(updates[0].cardIds).toHaveLength(5);
+    expect(updates[1].kind).toBe("deck");
+    expect(updates[1].cardIds).toHaveLength(0);
+    expect(updates[2].kind).toBe("discardPile");
+    expect(updates[2].cardIds).toHaveLength(1);
   });
 });
 describe("useCard", () => {

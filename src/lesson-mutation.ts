@@ -1,14 +1,16 @@
 import type {
   ActionCost,
-  ActionCostModifierKind,
   Card,
   CardContentDefinition,
   GetRandom,
+  Idol,
   Lesson,
   LessonUpdateQuery,
+  LessonUpdateQueryDiff,
   LessonUpdateQueryReason,
   Modifier,
 } from "./types";
+import { maxHandSize } from "./models";
 import { shuffleArray } from "./utils";
 
 const getCardContentDefinition = (card: Card): CardContentDefinition => {
@@ -34,8 +36,8 @@ export const drawCardsFromDeck = (
   discardPile: Array<Card["id"]>;
   drawnCards: Array<Card["id"]>;
 } => {
-  let newDeck = deck;
-  let newDiscardPile = discardPile;
+  let newDeck = [...deck];
+  let newDiscardPile = [...discardPile];
   let drawnCards = [];
   for (let i = 0; i < count; i++) {
     // 捨札を加えても引く数に足りない状況は考慮しない
@@ -56,6 +58,37 @@ export const drawCardsFromDeck = (
   };
 };
 
+/**
+ * スキルカードを手札へ加える
+ *
+ * - 山札から引いた時、レッスン開始時手札を引く時、生成した時、などに使う
+ * - 手札が最大枚数の5枚に達した以降は、引いたスキルカードは手札へ加えずに捨札へ移動する
+ * - TODO: [仕様確認] 最大手札数は本当に5枚か？
+ * - TODO: [仕様確認] 最大手札数を超えて引いた時の捨札へ直行する挙動自体、記憶によるとなので本当かわからない
+ */
+export const addCardsToHandOrDiscardPile = (
+  drawnCards: Array<Card["id"]>,
+  hand: Lesson["hand"],
+  discardPile: Lesson["discardPile"],
+): {
+  hand: Lesson["hand"];
+  discardPile: Lesson["discardPile"];
+} => {
+  const newHand = [...hand];
+  const newDiscardPile = [...discardPile];
+  for (const drawnCard of drawnCards) {
+    if (newHand.length < maxHandSize) {
+      newHand.push(drawnCard);
+    } else {
+      newDiscardPile.push(drawnCard);
+    }
+  }
+  return {
+    hand: newHand,
+    discardPile: newDiscardPile,
+  };
+};
+
 type LessonMutationResult = {
   nextHistoryResultIndex: LessonUpdateQuery["reason"]["historyResultIndex"];
   updates: LessonUpdateQuery[];
@@ -65,7 +98,6 @@ type LessonMutationResult = {
  * ターン開始時に手札を引く
  *
  * - TODO: レッスン開始時に手札
- * - TODO: 手札最大枚数の制限
  */
 export const drawCardsOnLessonStart = (
   lesson: Lesson,
@@ -81,10 +113,12 @@ export const drawCardsOnLessonStart = (
     lesson.discardPile,
     params.getRandom,
   );
+  const { hand: hand2, discardPile: discardPile2 } =
+    addCardsToHandOrDiscardPile(drawnCards, lesson.hand, discardPile);
   let updates: LessonUpdateQuery[] = [
     {
       kind: "hand",
-      cardIds: drawnCards,
+      cardIds: hand2,
       reason: {
         kind: "lessonStartTrigger",
         historyTurnNumber: lesson.turnNumber,
@@ -101,14 +135,12 @@ export const drawCardsOnLessonStart = (
       },
     },
   ];
-  if (
-    lesson.discardPile.some((cardId, index) => cardId !== discardPile[index])
-  ) {
+  if (JSON.stringify(lesson.discardPile) !== JSON.stringify(discardPile2)) {
     updates = [
       ...updates,
       {
         kind: "discardPile",
-        cardIds: discardPile,
+        cardIds: discardPile2,
         reason: {
           kind: "lessonStartTrigger",
           historyTurnNumber: lesson.turnNumber,
@@ -161,23 +193,11 @@ const calculateActualAndMaxComsumution = (
   };
 };
 
-/**
- * LessonUpdateQuery からコスト消費関係部分を抜き出したもの
- *
- * - TODO: LessonUpdateQuery と型を共通化する
- */
-type CostConsumptionUpdate = (
-  | {
-      kind: "life" | "vitality";
-    }
-  | {
-      kind: "modifier";
-      modifierKind: ActionCostModifierKind;
-    }
-) & {
-  actual: number;
-  max: number;
-};
+/** LessonUpdateQueryDiff からコスト消費関係部分を抜き出したもの */
+type CostConsumptionUpdateQueryDiff = Extract<
+  LessonUpdateQueryDiff,
+  { kind: "life" } | { kind: "modifier" } | { kind: "vitality" }
+>;
 
 /**
  * コスト消費を計算する
@@ -187,11 +207,11 @@ type CostConsumptionUpdate = (
 const calculateCostConsumption = (
   lesson: Lesson,
   cost: ActionCost,
-): CostConsumptionUpdate[] => {
+): CostConsumptionUpdateQueryDiff[] => {
   const idol = lesson.idol;
   switch (cost.kind) {
     case "normal": {
-      const updates: CostConsumptionUpdate[] = [];
+      const updates: CostConsumptionUpdateQueryDiff[] = [];
       let restCost = cost.value;
       if (idol.vitality > 0) {
         const result = calculateActualAndMaxComsumution(
@@ -240,6 +260,43 @@ const calculateCostConsumption = (
       const unreachable: never = cost.kind;
       throw new Error(`Unreachable statement`);
   }
+};
+
+const computeCardUsageUpdates = (
+  lesson: Lesson,
+  card: Card,
+  getRandom: GetRandom,
+  beforeVitality: Idol["vitality"],
+): LessonUpdateQueryDiff[] => {
+  const cardContent = getCardContentDefinition(card);
+  const diffs: LessonUpdateQueryDiff[] = [];
+  for (const effect of cardContent.effects) {
+    // TODO: 効果発動条件の判定
+
+    switch (effect.kind) {
+      case "drainLife": {
+        diffs.push({
+          kind: "life",
+          actual: -effect.value,
+          max: -effect.value,
+        });
+        break;
+      }
+      case "drawCards": {
+        const { deck, discardPile, drawnCards } = drawCardsFromDeck(
+          lesson.deck,
+          effect.amount,
+          lesson.discardPile,
+          getRandom,
+        );
+        break;
+      }
+      // default:
+      //   const unreachable: never = effect.kind;
+      //   throw new Error(`Unreachable statement`);
+    }
+  }
+  return diffs;
 };
 
 export const useCard = (
@@ -331,6 +388,14 @@ export const useCard = (
     }
   }
   nextHistoryResultIndex++;
+
+  //
+  // スキルカード使用
+  //
+
+  //
+  // TODO: スキルカード再使用
+  //
 
   //
   // TODO: スキルカード使用時トリガー

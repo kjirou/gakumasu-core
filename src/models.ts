@@ -148,7 +148,7 @@ export const patchUpdates = (
   lesson: Lesson,
   updates: LessonUpdateQuery[],
 ): Lesson => {
-  let newLesson = lesson;
+  let newLesson = { ...lesson };
   for (const update of updates) {
     switch (update.kind) {
       case "deck": {
