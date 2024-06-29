@@ -223,63 +223,6 @@ describe("patchUpdates", () => {
       expect(lesson.removedCardPile).toStrictEqual(["44", "444"]);
     });
   });
-  describe("hand", () => {
-    test("it works", () => {
-      const lessonMock = {
-        hand: ["1"],
-      } as Lesson;
-      const lesson = patchUpdates(lessonMock, [
-        {
-          kind: "hand",
-          cardIds: ["2", "3"],
-          reason: {
-            kind: "lessonStartTrigger",
-            historyTurnNumber: 1,
-            historyResultIndex: 1,
-          },
-        },
-      ]);
-      expect(lesson.hand).toStrictEqual(["2", "3"]);
-    });
-  });
-  describe("deck", () => {
-    test("it works", () => {
-      const lessonMock = {
-        deck: ["1"],
-      } as Lesson;
-      const lesson = patchUpdates(lessonMock, [
-        {
-          kind: "deck",
-          cardIds: ["2", "3"],
-          reason: {
-            kind: "lessonStartTrigger",
-            historyTurnNumber: 1,
-            historyResultIndex: 1,
-          },
-        },
-      ]);
-      expect(lesson.deck).toStrictEqual(["2", "3"]);
-    });
-  });
-  describe("discardPile", () => {
-    test("it works", () => {
-      const lessonMock = {
-        discardPile: ["1"],
-      } as Lesson;
-      const lesson = patchUpdates(lessonMock, [
-        {
-          kind: "discardPile",
-          cardIds: ["2", "3"],
-          reason: {
-            kind: "lessonStartTrigger",
-            historyTurnNumber: 1,
-            historyResultIndex: 1,
-          },
-        },
-      ]);
-      expect(lesson.discardPile).toStrictEqual(["2", "3"]);
-    });
-  });
   describe("modifier", () => {
     describe("増減対象のプロパティがamountのもの", () => {
       const modifierKinds = [
@@ -496,25 +439,6 @@ describe("patchUpdates", () => {
         },
       ]);
       expect(lessonMock.idol.life).toBe(3);
-    });
-  });
-  describe("removedCardPile", () => {
-    test("it works", () => {
-      const lessonMock = {
-        removedCardPile: ["1"],
-      } as Lesson;
-      const lesson = patchUpdates(lessonMock, [
-        {
-          kind: "removedCardPile",
-          cardIds: ["2", "3"],
-          reason: {
-            kind: "lessonStartTrigger",
-            historyTurnNumber: 1,
-            historyResultIndex: 1,
-          },
-        },
-      ]);
-      expect(lesson.removedCardPile).toStrictEqual(["2", "3"]);
     });
   });
   describe("selectedCardInHandIndex", () => {

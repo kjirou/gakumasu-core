@@ -8,6 +8,7 @@ import {
 import { cards, getCardDataById } from "./data/card";
 import {
   addCardsToHandOrDiscardPile,
+  createCardPlacementDiff,
   drawCardsFromDeck,
   drawCardsOnLessonStart,
   useCard,
@@ -18,6 +19,7 @@ import {
   prepareCardsForLesson,
 } from "./models";
 import { createIdGenerator } from "./utils";
+import exp from "constants";
 
 describe("drawCardsFromDeck", () => {
   test("山札がなくならない状態で1枚引いた時、1枚引けて、山札が1枚減る", () => {
@@ -115,6 +117,133 @@ describe("addCardsToHandOrDiscardPile", () => {
     },
   );
 });
+describe("createCardPlacementDiff", () => {
+  const testCases: {
+    args: Parameters<typeof createCardPlacementDiff>;
+    expected: ReturnType<typeof createCardPlacementDiff>;
+    name: string;
+  }[] = [
+    {
+      name: "before側だけ存在しても差分は返さない",
+      args: [
+        {
+          deck: ["1"],
+          discardPile: ["2"],
+          hand: ["3"],
+          removedCardPile: ["4"],
+        },
+        {},
+      ],
+      expected: { kind: "cardPlacement" },
+    },
+    {
+      name: "after側だけ存在しても差分は返さない",
+      args: [
+        {},
+        {
+          deck: ["1"],
+          discardPile: ["2"],
+          hand: ["3"],
+          removedCardPile: ["4"],
+        },
+      ],
+      expected: { kind: "cardPlacement" },
+    },
+    {
+      name: "全ての値がbefore/afterで同じ場合は差分を返さない",
+      args: [
+        {
+          deck: ["1"],
+          discardPile: ["2"],
+          hand: ["3"],
+          removedCardPile: ["4"],
+        },
+        {
+          deck: ["1"],
+          discardPile: ["2"],
+          hand: ["3"],
+          removedCardPile: ["4"],
+        },
+      ],
+      expected: { kind: "cardPlacement" },
+    },
+    {
+      name: "deckのみの差分を返せる",
+      args: [
+        {
+          deck: ["1"],
+          discardPile: ["2"],
+          hand: ["3"],
+          removedCardPile: ["4"],
+        },
+        {
+          deck: ["11"],
+          discardPile: ["2"],
+          hand: ["3"],
+          removedCardPile: ["4"],
+        },
+      ],
+      expected: { kind: "cardPlacement", deck: ["11"] },
+    },
+    {
+      name: "discardPileのみの差分を返せる",
+      args: [
+        {
+          deck: ["1"],
+          discardPile: ["2"],
+          hand: ["3"],
+          removedCardPile: ["4"],
+        },
+        {
+          deck: ["1"],
+          discardPile: ["22"],
+          hand: ["3"],
+          removedCardPile: ["4"],
+        },
+      ],
+      expected: { kind: "cardPlacement", discardPile: ["22"] },
+    },
+    {
+      name: "handのみの差分を返せる",
+      args: [
+        {
+          deck: ["1"],
+          discardPile: ["2"],
+          hand: ["3"],
+          removedCardPile: ["4"],
+        },
+        {
+          deck: ["1"],
+          discardPile: ["2"],
+          hand: ["33"],
+          removedCardPile: ["4"],
+        },
+      ],
+      expected: { kind: "cardPlacement", hand: ["33"] },
+    },
+    {
+      name: "removedCardPileのみの差分を返せる",
+      args: [
+        {
+          deck: ["1"],
+          discardPile: ["2"],
+          hand: ["3"],
+          removedCardPile: ["4"],
+        },
+        {
+          deck: ["1"],
+          discardPile: ["2"],
+          hand: ["3"],
+          removedCardPile: ["44"],
+        },
+      ],
+      expected: { kind: "cardPlacement", removedCardPile: ["44"] },
+    },
+  ];
+  test.each(testCases)("$name", ({ args, expected }) => {
+    expect(createCardPlacementDiff(...args)).toStrictEqual(expected);
+  });
+});
 describe("drawCardsOnLessonStart", () => {
   test("山札に引く数が残っている時、山札はその分減り、捨札に変化はない", () => {
     const lessonMock = {
@@ -122,19 +251,16 @@ describe("drawCardsOnLessonStart", () => {
       deck: ["1", "2", "3"],
       discardPile: ["4"],
     } as Lesson;
-    const updates: any = drawCardsOnLessonStart(lessonMock, {
+    const updates = drawCardsOnLessonStart(lessonMock, {
       count: 3,
       historyResultIndex: 1,
       getRandom: Math.random,
     });
-    expect(updates).toHaveLength(3);
-    // NOTE: 本来は順不同な更新クエリの順番に依存しているが、手間省略のため許容する
-    expect(updates[0].kind).toBe("hand");
-    expect(updates[0].cardIds).toHaveLength(3);
-    expect(updates[1].kind).toBe("deck");
-    expect(updates[1].cardIds).toHaveLength(0);
-    expect(updates[2].kind).toBe("discardPile");
-    expect(updates[2].cardIds).toHaveLength(1);
+    const update = updates.find((e) => e.kind === "cardPlacement") as any;
+    expect(update.hand).toHaveLength(3);
+    expect(update.deck).toHaveLength(0);
+    expect(update.discardPile).toBeUndefined();
+    expect(update.removedCardPile).toBeUndefined();
   });
   test("山札に引く数が残っていない時、山札は再構築された上で残りの引く数分減り、捨札は空になる", () => {
     const lessonMock = {
@@ -142,18 +268,16 @@ describe("drawCardsOnLessonStart", () => {
       deck: ["1", "2"],
       discardPile: ["3", "4"],
     } as Lesson;
-    const updates: any = drawCardsOnLessonStart(lessonMock, {
+    const updates = drawCardsOnLessonStart(lessonMock, {
       count: 3,
       historyResultIndex: 1,
       getRandom: Math.random,
     });
-    expect(updates).toHaveLength(3);
-    expect(updates[0].kind).toBe("hand");
-    expect(updates[0].cardIds).toHaveLength(3);
-    expect(updates[1].kind).toBe("deck");
-    expect(updates[1].cardIds).toHaveLength(1);
-    expect(updates[2].kind).toBe("discardPile");
-    expect(updates[2].cardIds).toHaveLength(0);
+    const update = updates.find((e) => e.kind === "cardPlacement") as any;
+    expect(update.hand).toHaveLength(3);
+    expect(update.deck).toHaveLength(1);
+    expect(update.discardPile).toHaveLength(0);
+    expect(update.removedCardPile).toBeUndefined();
   });
   test("手札最大数を超える枚数を引いた時、入らないスキルカードは捨札へ移動する", () => {
     const lessonMock = {
@@ -161,18 +285,16 @@ describe("drawCardsOnLessonStart", () => {
       deck: ["1", "2", "3", "4", "5", "6"],
       discardPile: [] as Lesson["discardPile"],
     } as Lesson;
-    const updates: any = drawCardsOnLessonStart(lessonMock, {
+    const updates = drawCardsOnLessonStart(lessonMock, {
       count: 6,
       historyResultIndex: 1,
       getRandom: Math.random,
     });
-    expect(updates).toHaveLength(3);
-    expect(updates[0].kind).toBe("hand");
-    expect(updates[0].cardIds).toHaveLength(5);
-    expect(updates[1].kind).toBe("deck");
-    expect(updates[1].cardIds).toHaveLength(0);
-    expect(updates[2].kind).toBe("discardPile");
-    expect(updates[2].cardIds).toHaveLength(1);
+    const update = updates.find((e) => e.kind === "cardPlacement") as any;
+    expect(update.hand).toHaveLength(5);
+    expect(update.deck).toHaveLength(0);
+    expect(update.discardPile).toHaveLength(1);
+    expect(update.removedCardPile).toBeUndefined();
   });
 });
 describe("useCard", () => {
@@ -194,8 +316,8 @@ describe("useCard", () => {
       lastTurnNumber: 6,
     });
   };
-  describe("手札を捨札または除外へ移動", () => {
-    test("「レッスン中1回」ではない手札を使った時は、除外へ移動", () => {
+  describe("使用した手札を捨札か除外へ移動", () => {
+    test("「レッスン中1回」ではない手札を使った時は、捨札へ移動", () => {
       const lesson = createLessonForTest({
         cards: [
           {
@@ -211,17 +333,11 @@ describe("useCard", () => {
         selectedCardInHandIndex: 0,
         getRandom: () => 0,
       });
-      expect(updates.find((e) => e.kind === "hand")).toStrictEqual({
-        kind: "hand",
-        cardIds: [],
-        reason: expect.any(Object),
-      });
-      expect(updates.find((e) => e.kind === "discardPile")).toStrictEqual({
-        kind: "discardPile",
-        cardIds: ["a"],
-        reason: expect.any(Object),
-      });
-      expect(updates.find((e) => e.kind === "removedCardPile")).toBeUndefined();
+      const update = updates.find((e) => e.kind === "cardPlacement") as any;
+      expect(update.hand).toStrictEqual([]);
+      expect(update.deck).toBeUndefined();
+      expect(update.discardPile).toStrictEqual(["a"]);
+      expect(update.removedCardPile).toBeUndefined();
     });
     test("「レッスン中1回」の手札を使った時は、除外へ移動", () => {
       const lesson = createLessonForTest({
@@ -239,17 +355,11 @@ describe("useCard", () => {
         selectedCardInHandIndex: 0,
         getRandom: () => 0,
       });
-      expect(updates.find((e) => e.kind === "hand")).toStrictEqual({
-        kind: "hand",
-        cardIds: [],
-        reason: expect.any(Object),
-      });
-      expect(updates.find((e) => e.kind === "discardPile")).toBeUndefined();
-      expect(updates.find((e) => e.kind === "removedCardPile")).toStrictEqual({
-        kind: "removedCardPile",
-        cardIds: ["a"],
-        reason: expect.any(Object),
-      });
+      const update = updates.find((e) => e.kind === "cardPlacement") as any;
+      expect(update.hand).toStrictEqual([]);
+      expect(update.deck).toBeUndefined();
+      expect(update.discardPile).toBeUndefined();
+      expect(update.removedCardPile).toStrictEqual(["a"]);
     });
   });
   describe("コスト消費", () => {
@@ -381,25 +491,14 @@ describe("useCard", () => {
           selectedCardInHandIndex: 0,
           getRandom: () => 0,
         });
-        // 手札:2, 山札:0, 捨札:0, 除外:1
-        expect(
-          // 「アイドル宣言」を使った時の hand の更新があるので、効果による手札増加は後ろ側の更新になる
-          (
-            updates
-              .slice()
-              .reverse()
-              .find((e) => e.kind === "hand") as any
-          ).cardIds,
-        ).toHaveLength(2);
-        expect(
-          (updates.find((e) => e.kind === "deck") as any).cardIds,
-        ).toHaveLength(0);
-        expect(
-          (updates.find((e) => e.kind === "discardPile") as any).cardIds,
-        ).toHaveLength(0);
-        expect(
-          (updates.find((e) => e.kind === "removedCardPile") as any).cardIds,
-        ).toHaveLength(1);
+        // 手札使用時の更新があるため、効果による手札増加は2番目の更新になる
+        const update = updates.filter(
+          (e) => e.kind === "cardPlacement",
+        )[1] as any;
+        expect(update.hand).toHaveLength(2);
+        expect(update.deck).toHaveLength(0);
+        expect(update.discardPile).toBeUndefined();
+        expect(update.removedCardPile).toBeUndefined();
       });
       test("「アイドル宣言」を、山札が足りない状況で使った時、山札と捨札は再構築される", () => {
         const lesson = createLessonForTest({
@@ -425,13 +524,14 @@ describe("useCard", () => {
           selectedCardInHandIndex: 0,
           getRandom: () => 0,
         });
-        // 手札:2, 山札:1, 捨札:0, 除外:1
-        expect(
-          (updates.find((e) => e.kind === "deck") as any).cardIds,
-        ).toHaveLength(1);
-        expect(
-          (updates.find((e) => e.kind === "discardPile") as any).cardIds,
-        ).toHaveLength(0);
+        // 手札使用時の更新があるため、効果による手札増加は2番目の更新になる
+        const update = updates.filter(
+          (e) => e.kind === "cardPlacement",
+        )[1] as any;
+        expect(update.hand).toHaveLength(2);
+        expect(update.deck).toHaveLength(1);
+        expect(update.discardPile).toHaveLength(0);
+        expect(update.removedCardPile).toBeUndefined();
       });
       test("「アイドル宣言」を、手札最大枚数が超える状況で使った時、手札は最大枚数で、捨札が増える", () => {
         const lesson = createLessonForTest({
@@ -456,19 +556,14 @@ describe("useCard", () => {
           selectedCardInHandIndex: 0,
           getRandom: () => 0,
         });
-        // 手札:5, 山札:0, 捨札:1, 除外:1
-        expect(
-          // 「アイドル宣言」を使った時の hand の更新があるので、効果による手札増加は後ろ側の更新になる
-          (
-            updates
-              .slice()
-              .reverse()
-              .find((e) => e.kind === "hand") as any
-          ).cardIds,
-        ).toHaveLength(5);
-        expect(
-          (updates.find((e) => e.kind === "discardPile") as any).cardIds,
-        ).toHaveLength(1);
+        // 手札使用時の更新があるため、効果による手札増加は2番目の更新になる
+        const update = updates.filter(
+          (e) => e.kind === "cardPlacement",
+        )[1] as any;
+        expect(update.hand).toHaveLength(5);
+        expect(update.deck).toHaveLength(0);
+        expect(update.discardPile).toHaveLength(1);
+        expect(update.removedCardPile).toBeUndefined();
       });
     });
     describe("enhanceHand", () => {
@@ -537,26 +632,19 @@ describe("useCard", () => {
           selectedCardInHandIndex: 0,
           getRandom: () => 0,
         });
-        // 手札:2, 山札:0, 捨札:3, 除外:1
-        // スキルカード使用時の手札更新があるので、効果による手札更新は末尾側のものになる
-        const handCardIds = (
-          updates
-            .slice()
-            .reverse()
-            .find((e) => e.kind === "hand") as any
-        ).cardIds;
-        expect(handCardIds).toHaveLength(2);
-        expect(handCardIds).toContain("d");
-        expect(handCardIds).toContain("e");
-        expect(
-          (updates.find((e) => e.kind === "deck") as any).cardIds,
-        ).toHaveLength(0);
-        expect(
-          (updates.find((e) => e.kind === "discardPile") as any).cardIds,
-        ).toHaveLength(3);
-        expect(
-          (updates.find((e) => e.kind === "removedCardPile") as any).cardIds,
-        ).toHaveLength(1);
+        // 手札使用時の更新があるため、効果による手札増加は2番目の更新になる
+        const update = updates.filter(
+          (e) => e.kind === "cardPlacement",
+        )[1] as any;
+        expect(update.hand).toHaveLength(2);
+        expect(update.hand).toContain("d");
+        expect(update.hand).toContain("e");
+        expect(update.deck).toHaveLength(0);
+        expect(update.discardPile).toHaveLength(3);
+        expect(update.discardPile).toContain("b");
+        expect(update.discardPile).toContain("c");
+        expect(update.discardPile).toContain("f");
+        expect(update.removedCardPile).toBeUndefined();
       });
     });
   });

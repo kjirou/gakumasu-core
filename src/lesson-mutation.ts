@@ -89,6 +89,46 @@ export const addCardsToHandOrDiscardPile = (
   };
 };
 
+export const createCardPlacementDiff = (
+  before: {
+    deck?: Lesson["deck"];
+    discardPile?: Lesson["discardPile"];
+    hand?: Lesson["hand"];
+    removedCardPile?: Lesson["removedCardPile"];
+  },
+  after: {
+    deck?: Lesson["deck"];
+    discardPile?: Lesson["discardPile"];
+    hand?: Lesson["hand"];
+    removedCardPile?: Lesson["removedCardPile"];
+  },
+): Extract<LessonUpdateQueryDiff, { kind: "cardPlacement" }> => {
+  return {
+    kind: "cardPlacement" as const,
+    ...(before.deck !== undefined &&
+    after.deck !== undefined &&
+    JSON.stringify(before.deck) !== JSON.stringify(after.deck)
+      ? { deck: after.deck }
+      : {}),
+    ...(before.discardPile !== undefined &&
+    after.discardPile !== undefined &&
+    JSON.stringify(before.discardPile) !== JSON.stringify(after.discardPile)
+      ? { discardPile: after.discardPile }
+      : {}),
+    ...(before.hand !== undefined &&
+    after.hand !== undefined &&
+    JSON.stringify(before.hand) !== JSON.stringify(after.hand)
+      ? { hand: after.hand }
+      : {}),
+    ...(before.removedCardPile !== undefined &&
+    after.removedCardPile !== undefined &&
+    JSON.stringify(before.removedCardPile) !==
+      JSON.stringify(after.removedCardPile)
+      ? { removedCardPile: after.removedCardPile }
+      : {}),
+  };
+};
+
 type LessonMutationResult = {
   nextHistoryResultIndex: LessonUpdateQuery["reason"]["historyResultIndex"];
   updates: LessonUpdateQuery[];
@@ -115,28 +155,20 @@ export const drawCardsOnLessonStart = (
   );
   const { hand: hand2, discardPile: discardPile2 } =
     addCardsToHandOrDiscardPile(drawnCards, lesson.hand, discardPile);
-  const updates: LessonUpdateQuery[] = [
+  return [
     {
-      kind: "hand",
-      cardIds: hand2,
-      reason: {
-        kind: "lessonStartTrigger",
-        historyTurnNumber: lesson.turnNumber,
-        historyResultIndex: params.historyResultIndex,
-      },
-    },
-    {
-      kind: "deck",
-      cardIds: deck,
-      reason: {
-        kind: "lessonStartTrigger",
-        historyTurnNumber: lesson.turnNumber,
-        historyResultIndex: params.historyResultIndex,
-      },
-    },
-    {
-      kind: "discardPile",
-      cardIds: discardPile2,
+      ...createCardPlacementDiff(
+        {
+          deck: lesson.deck,
+          discardPile: lesson.discardPile,
+          hand: lesson.hand,
+        },
+        {
+          deck,
+          discardPile: discardPile2,
+          hand: hand2,
+        },
+      ),
       reason: {
         kind: "lessonStartTrigger",
         historyTurnNumber: lesson.turnNumber,
@@ -144,7 +176,6 @@ export const drawCardsOnLessonStart = (
       },
     },
   ];
-  return updates;
 };
 
 /**
@@ -265,7 +296,7 @@ const computeEffects = (
 ): LessonUpdateQueryDiff[] => {
   const diffs: LessonUpdateQueryDiff[] = [];
   for (const effect of effects) {
-    // TODO: 効果発動条件の判定
+    // TODO: 個別の効果発動条件の判定
 
     switch (effect.kind) {
       // 現在は、Pアイテムの「私の「初」の楽譜」にのみ存在し、スキルカードには存在しない効果
@@ -289,18 +320,20 @@ const computeEffects = (
           lesson.hand,
           discardPile,
         );
-        diffs.push({
-          kind: "deck",
-          cardIds: deck,
-        });
-        diffs.push({
-          kind: "hand",
-          cardIds: hand,
-        });
-        diffs.push({
-          kind: "discardPile",
-          cardIds: discardPile2,
-        });
+        diffs.push(
+          createCardPlacementDiff(
+            {
+              deck: lesson.deck,
+              discardPile: lesson.discardPile,
+              hand: lesson.hand,
+            },
+            {
+              deck,
+              discardPile: discardPile2,
+              hand,
+            },
+          ),
+        );
         break;
       }
       case "enhanceHand": {
@@ -339,18 +372,20 @@ const computeEffects = (
           [],
           discardPile2,
         );
-        diffs.push({
-          kind: "deck",
-          cardIds: deck,
-        });
-        diffs.push({
-          kind: "hand",
-          cardIds: hand,
-        });
-        diffs.push({
-          kind: "discardPile",
-          cardIds: discardPile3,
-        });
+        diffs.push(
+          createCardPlacementDiff(
+            {
+              deck: lesson.deck,
+              discardPile: lesson.discardPile,
+              hand: lesson.hand,
+            },
+            {
+              deck,
+              discardPile: discardPile3,
+              hand,
+            },
+          ),
+        );
         break;
       // default:
       //   const unreachable: never = effect.kind;
@@ -384,42 +419,31 @@ export const useCard = (
   let nextHistoryResultIndex = historyResultIndex;
 
   //
-  // 手札を捨札か除外へ移動
+  // 使用した手札を捨札か除外へ移動
   //
-  const discardOrRemovedCardUpdates: LessonUpdateQuery[] = [];
-  discardOrRemovedCardUpdates.push({
-    kind: "hand",
-    cardIds: newLesson.hand.filter((id) => id !== cardId),
-    reason: {
-      kind: "cardUsage",
-      cardId,
-      historyTurnNumber: newLesson.turnNumber,
-      historyResultIndex: nextHistoryResultIndex,
+  const discardOrRemovedCardUpdates: LessonUpdateQuery[] = [
+    {
+      ...createCardPlacementDiff(
+        {
+          hand: lesson.hand,
+          discardPile: lesson.discardPile,
+          removedCardPile: lesson.removedCardPile,
+        },
+        {
+          hand: newLesson.hand.filter((id) => id !== cardId),
+          ...(cardContent.usableOncePerLesson
+            ? { removedCardPile: [...newLesson.removedCardPile, cardId] }
+            : { discardPile: [...newLesson.discardPile, cardId] }),
+        },
+      ),
+      reason: {
+        kind: "cardUsage",
+        cardId,
+        historyTurnNumber: newLesson.turnNumber,
+        historyResultIndex: nextHistoryResultIndex,
+      },
     },
-  });
-  if (cardContent.usableOncePerLesson) {
-    discardOrRemovedCardUpdates.push({
-      kind: "removedCardPile",
-      cardIds: [...newLesson.removedCardPile, cardId],
-      reason: {
-        kind: "cardUsage",
-        cardId,
-        historyTurnNumber: newLesson.turnNumber,
-        historyResultIndex: nextHistoryResultIndex,
-      },
-    });
-  } else {
-    discardOrRemovedCardUpdates.push({
-      kind: "discardPile",
-      cardIds: [...newLesson.discardPile, cardId],
-      reason: {
-        kind: "cardUsage",
-        cardId,
-        historyTurnNumber: newLesson.turnNumber,
-        historyResultIndex: nextHistoryResultIndex,
-      },
-    });
-  }
+  ];
   newLesson = patchUpdates(newLesson, discardOrRemovedCardUpdates);
   nextHistoryResultIndex++;
 

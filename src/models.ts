@@ -184,36 +184,6 @@ export const patchUpdates = (
         };
         break;
       }
-      /**
-       * 山札の上書き
-       */
-      case "deck": {
-        newLesson = {
-          ...newLesson,
-          deck: update.cardIds,
-        };
-        break;
-      }
-      /**
-       * 捨札の上書き
-       */
-      case "discardPile": {
-        newLesson = {
-          ...newLesson,
-          discardPile: update.cardIds,
-        };
-        break;
-      }
-      /**
-       * 手札の上書き
-       */
-      case "hand": {
-        newLesson = {
-          ...newLesson,
-          hand: update.cardIds,
-        };
-        break;
-      }
       case "life": {
         newLesson = {
           ...newLesson,
@@ -269,16 +239,6 @@ export const patchUpdates = (
             ...newLesson.idol,
             modifiers: newModifiers,
           },
-        };
-        break;
-      }
-      /**
-       * 除外の上書き
-       */
-      case "removedCardPile": {
-        newLesson = {
-          ...newLesson,
-          removedCardPile: update.cardIds,
         };
         break;
       }
