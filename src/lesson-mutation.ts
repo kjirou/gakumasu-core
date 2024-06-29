@@ -387,6 +387,9 @@ const computeEffects = (
           ),
         );
         break;
+      case "getModifier": {
+        break;
+      }
       // default:
       //   const unreachable: never = effect.kind;
       //   throw new Error(`Unreachable statement`);

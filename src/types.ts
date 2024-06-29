@@ -1106,7 +1106,7 @@ export type LessonUpdateQueryDiff =
     }
   | {
       kind: "modifier";
-      modifierKind: ActionCostModifierKind;
+      modifierKind: Modifier["kind"];
       actual: number;
       max: number;
     }

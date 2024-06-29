@@ -198,32 +198,36 @@ export const patchUpdates = (
         const newModifiers = newLesson.idol.modifiers
           .map((modifier) => {
             let newModifier = modifier;
-            switch (update.modifierKind) {
-              case "focus":
-              case "motivation":
-              case "positiveImpression":
-                if (
-                  modifier.kind === "focus" ||
-                  modifier.kind === "motivation" ||
-                  modifier.kind === "positiveImpression"
-                ) {
+            if (modifier.kind !== update.modifierKind) {
+              switch (modifier.kind) {
+                case "focus":
+                case "motivation":
+                case "positiveImpression": {
                   newModifier = {
                     ...modifier,
                     amount: modifier.amount + update.actual,
                   };
+                  break;
                 }
-                break;
-              case "goodCondition":
-                if (modifier.kind === "goodCondition") {
+                // duration の設定もあるが、現状は常に 1 のみなので無視する
+                case "additionalCardUsageCount": {
+                  newModifier = {
+                    ...modifier,
+                    amount: modifier.amount + update.actual,
+                  };
+                  break;
+                }
+                case "goodCondition": {
                   newModifier = {
                     ...modifier,
                     duration: modifier.duration + update.actual,
                   };
+                  break;
                 }
-                break;
-              default:
-                const unreachable: never = update.modifierKind;
-                throw new Error(`Unreachable statement`);
+                default:
+                  const unreachable: never = modifier.kind;
+                  throw new Error(`Unreachable statement`);
+              }
             }
             return newModifier;
           })
