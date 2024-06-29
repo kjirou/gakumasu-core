@@ -115,7 +115,7 @@ export const drawCardsOnLessonStart = (
   );
   const { hand: hand2, discardPile: discardPile2 } =
     addCardsToHandOrDiscardPile(drawnCards, lesson.hand, discardPile);
-  let updates: LessonUpdateQuery[] = [
+  const updates: LessonUpdateQuery[] = [
     {
       kind: "hand",
       cardIds: hand2,
@@ -134,21 +134,16 @@ export const drawCardsOnLessonStart = (
         historyResultIndex: params.historyResultIndex,
       },
     },
-  ];
-  if (JSON.stringify(lesson.discardPile) !== JSON.stringify(discardPile2)) {
-    updates = [
-      ...updates,
-      {
-        kind: "discardPile",
-        cardIds: discardPile2,
-        reason: {
-          kind: "lessonStartTrigger",
-          historyTurnNumber: lesson.turnNumber,
-          historyResultIndex: params.historyResultIndex,
-        },
+    {
+      kind: "discardPile",
+      cardIds: discardPile2,
+      reason: {
+        kind: "lessonStartTrigger",
+        historyTurnNumber: lesson.turnNumber,
+        historyResultIndex: params.historyResultIndex,
       },
-    ];
-  }
+    },
+  ];
   return updates;
 };
 
@@ -302,14 +297,10 @@ const computeEffects = (
           kind: "hand",
           cardIds: hand,
         });
-        if (
-          JSON.stringify(lesson.discardPile) !== JSON.stringify(discardPile2)
-        ) {
-          diffs.push({
-            kind: "discardPile",
-            cardIds: discardPile2,
-          });
-        }
+        diffs.push({
+          kind: "discardPile",
+          cardIds: discardPile2,
+        });
         break;
       }
       case "enhanceHand": {
@@ -331,6 +322,36 @@ const computeEffects = (
         });
         break;
       }
+      case "exchangeHand":
+        const discardPile1 = [...lesson.discardPile, ...lesson.hand];
+        const {
+          deck,
+          discardPile: discardPile2,
+          drawnCards,
+        } = drawCardsFromDeck(
+          lesson.deck,
+          lesson.hand.length,
+          discardPile1,
+          getRandom,
+        );
+        const { hand, discardPile: discardPile3 } = addCardsToHandOrDiscardPile(
+          drawnCards,
+          [],
+          discardPile2,
+        );
+        diffs.push({
+          kind: "deck",
+          cardIds: deck,
+        });
+        diffs.push({
+          kind: "hand",
+          cardIds: hand,
+        });
+        diffs.push({
+          kind: "discardPile",
+          cardIds: discardPile3,
+        });
+        break;
       // default:
       //   const unreachable: never = effect.kind;
       //   throw new Error(`Unreachable statement`);

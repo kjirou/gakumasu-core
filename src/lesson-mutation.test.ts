@@ -127,12 +127,14 @@ describe("drawCardsOnLessonStart", () => {
       historyResultIndex: 1,
       getRandom: Math.random,
     });
-    expect(updates).toHaveLength(2);
+    expect(updates).toHaveLength(3);
     // NOTE: 本来は順不同な更新クエリの順番に依存しているが、手間省略のため許容する
     expect(updates[0].kind).toBe("hand");
     expect(updates[0].cardIds).toHaveLength(3);
     expect(updates[1].kind).toBe("deck");
     expect(updates[1].cardIds).toHaveLength(0);
+    expect(updates[2].kind).toBe("discardPile");
+    expect(updates[2].cardIds).toHaveLength(1);
   });
   test("山札に引く数が残っていない時、山札は再構築された上で残りの引く数分減り、捨札は空になる", () => {
     const lessonMock = {
@@ -392,8 +394,9 @@ describe("useCard", () => {
         expect(
           (updates.find((e) => e.kind === "deck") as any).cardIds,
         ).toHaveLength(0);
-        // 捨札は変化なしなので、更新自体がない
-        expect(updates.filter((e) => e.kind === "discardPile")).toHaveLength(0);
+        expect(
+          (updates.find((e) => e.kind === "discardPile") as any).cardIds,
+        ).toHaveLength(0);
         expect(
           (updates.find((e) => e.kind === "removedCardPile") as any).cardIds,
         ).toHaveLength(1);
@@ -469,7 +472,7 @@ describe("useCard", () => {
       });
     });
     describe("enhanceHand", () => {
-      test("「ティーパーティ」は、自分以外の、プロデュース中まははレッスン中に強化していない手札のみを強化する", () => {
+      test("「ティーパーティ」は、自分以外の、プロデュース中またはレッスン中に強化していない手札のみを強化する", () => {
         const lesson = createLessonForTest({
           cards: [
             {
@@ -507,6 +510,53 @@ describe("useCard", () => {
         expect(enhancedCardIds).toContain("c");
         expect(enhancedCardIds).not.toContain("d");
         expect(enhancedCardIds).not.toContain("e");
+      });
+    });
+    describe("exchangeHand", () => {
+      test("「仕切り直し」を、手札3枚の状況で使った時、残りの手札は捨札へ入り、手札は山札から引いた新しい2枚になる", () => {
+        const lesson = createLessonForTest({
+          cards: [
+            {
+              id: "a",
+              definition: getCardDataById("shikirinaoshi"),
+              enabled: true,
+              enhanced: false,
+            },
+            ...["b", "c", "d", "e", "f"].map((id) => ({
+              id,
+              definition: getCardDataById("apirunokihon"),
+              enabled: true,
+              enhanced: false,
+            })),
+          ],
+        });
+        lesson.hand = ["a", "b", "c"];
+        lesson.deck = ["d", "e"];
+        lesson.discardPile = ["f"];
+        const { updates } = useCard(lesson, 1, {
+          selectedCardInHandIndex: 0,
+          getRandom: () => 0,
+        });
+        // 手札:2, 山札:0, 捨札:3, 除外:1
+        // スキルカード使用時の手札更新があるので、効果による手札更新は末尾側のものになる
+        const handCardIds = (
+          updates
+            .slice()
+            .reverse()
+            .find((e) => e.kind === "hand") as any
+        ).cardIds;
+        expect(handCardIds).toHaveLength(2);
+        expect(handCardIds).toContain("d");
+        expect(handCardIds).toContain("e");
+        expect(
+          (updates.find((e) => e.kind === "deck") as any).cardIds,
+        ).toHaveLength(0);
+        expect(
+          (updates.find((e) => e.kind === "discardPile") as any).cardIds,
+        ).toHaveLength(3);
+        expect(
+          (updates.find((e) => e.kind === "removedCardPile") as any).cardIds,
+        ).toHaveLength(1);
       });
     });
   });

@@ -1074,6 +1074,18 @@ export type LessonUpdateQueryDiff =
       cardIds: Array<Card["id"]>;
     }
   | {
+      /**
+       * カード配置の上書き
+       *
+       * - 変化のあった配置のみプロパティが存在する
+       */
+      kind: "cardPlacement";
+      deck?: Lesson["deck"];
+      discardPile?: Lesson["discardPile"];
+      hand?: Lesson["hand"];
+      removedCardPile?: Lesson["removedCardPile"];
+    }
+  | {
       kind: "deck";
       cardIds: Array<Card["id"]>;
     }

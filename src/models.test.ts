@@ -147,6 +147,82 @@ describe("patchUpdates", () => {
       expect(lesson.cards[1].enhancements).toStrictEqual([]);
     });
   });
+  describe("cardPlacement", () => {
+    test("全てのプロパティが存在する", () => {
+      const lessonMock = {
+        deck: ["1"],
+        discardPile: ["2"],
+        hand: ["3"],
+        removedCardPile: ["4"],
+      } as Lesson;
+      const lesson = patchUpdates(lessonMock, [
+        {
+          kind: "cardPlacement",
+          deck: ["11", "111"],
+          discardPile: ["22", "222"],
+          hand: ["33", "333"],
+          removedCardPile: ["44", "444"],
+          reason: {
+            kind: "lessonStartTrigger",
+            historyTurnNumber: 1,
+            historyResultIndex: 1,
+          },
+        },
+      ]);
+      expect(lesson.deck).toStrictEqual(["11", "111"]);
+      expect(lesson.discardPile).toStrictEqual(["22", "222"]);
+      expect(lesson.hand).toStrictEqual(["33", "333"]);
+      expect(lesson.removedCardPile).toStrictEqual(["44", "444"]);
+    });
+    test("deckとdiscardPileのみ", () => {
+      const lessonMock = {
+        deck: ["1"],
+        discardPile: ["2"],
+        hand: ["3"],
+        removedCardPile: ["4"],
+      } as Lesson;
+      const lesson = patchUpdates(lessonMock, [
+        {
+          kind: "cardPlacement",
+          deck: ["11", "111"],
+          discardPile: ["22", "222"],
+          reason: {
+            kind: "lessonStartTrigger",
+            historyTurnNumber: 1,
+            historyResultIndex: 1,
+          },
+        },
+      ]);
+      expect(lesson.deck).toStrictEqual(["11", "111"]);
+      expect(lesson.discardPile).toStrictEqual(["22", "222"]);
+      expect(lesson.hand).toStrictEqual(["3"]);
+      expect(lesson.removedCardPile).toStrictEqual(["4"]);
+    });
+    test("handとremovedCardPileのみ", () => {
+      const lessonMock = {
+        deck: ["1"],
+        discardPile: ["2"],
+        hand: ["3"],
+        removedCardPile: ["4"],
+      } as Lesson;
+      const lesson = patchUpdates(lessonMock, [
+        {
+          kind: "cardPlacement",
+          hand: ["33", "333"],
+          removedCardPile: ["44", "444"],
+          reason: {
+            kind: "lessonStartTrigger",
+            historyTurnNumber: 1,
+            historyResultIndex: 1,
+          },
+        },
+      ]);
+      expect(lesson.deck).toStrictEqual(["1"]);
+      expect(lesson.discardPile).toStrictEqual(["2"]);
+      expect(lesson.hand).toStrictEqual(["33", "333"]);
+      expect(lesson.removedCardPile).toStrictEqual(["44", "444"]);
+    });
+  });
   describe("hand", () => {
     test("it works", () => {
       const lessonMock = {

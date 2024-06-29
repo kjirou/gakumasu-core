@@ -170,7 +170,23 @@ export const patchUpdates = (
               : card;
           }),
         };
+        break;
       }
+      case "cardPlacement": {
+        newLesson = {
+          ...newLesson,
+          ...(update.deck ? { deck: update.deck } : {}),
+          ...(update.discardPile ? { discardPile: update.discardPile } : {}),
+          ...(update.hand ? { hand: update.hand } : {}),
+          ...(update.removedCardPile
+            ? { removedCardPile: update.removedCardPile }
+            : {}),
+        };
+        break;
+      }
+      /**
+       * 山札の上書き
+       */
       case "deck": {
         newLesson = {
           ...newLesson,
@@ -178,6 +194,9 @@ export const patchUpdates = (
         };
         break;
       }
+      /**
+       * 捨札の上書き
+       */
       case "discardPile": {
         newLesson = {
           ...newLesson,
@@ -185,6 +204,9 @@ export const patchUpdates = (
         };
         break;
       }
+      /**
+       * 手札の上書き
+       */
       case "hand": {
         newLesson = {
           ...newLesson,
@@ -250,6 +272,9 @@ export const patchUpdates = (
         };
         break;
       }
+      /**
+       * 除外の上書き
+       */
       case "removedCardPile": {
         newLesson = {
           ...newLesson,
