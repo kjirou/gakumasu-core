@@ -365,18 +365,12 @@ describe("useCard", () => {
               enabled: true,
               enhanced: false,
             },
-            {
-              id: "b",
+            ...["b", "c"].map((id) => ({
+              id,
               definition: getCardDataById("apirunokihon"),
               enabled: true,
               enhanced: false,
-            },
-            {
-              id: "c",
-              definition: getCardDataById("apirunokihon"),
-              enabled: true,
-              enhanced: false,
-            },
+            })),
           ],
         });
         lesson.hand = ["a"];
@@ -385,28 +379,26 @@ describe("useCard", () => {
           selectedCardInHandIndex: 0,
           getRandom: () => 0,
         });
-        // 「アイドル宣言」を使った時の hand の更新があるので、効果による手札増加は後ろ側の更新になる
+        // 手札:2, 山札:0, 捨札:0, 除外:1
         expect(
-          updates
-            .slice()
-            .reverse()
-            .find((e) => e.kind === "hand"),
-        ).toStrictEqual({
-          kind: "hand",
-          cardIds: expect.arrayContaining(["a", "b", "c"]),
-          reason: expect.any(Object),
-        });
-        expect(updates.find((e) => e.kind === "deck")).toStrictEqual({
-          kind: "deck",
-          cardIds: [],
-          reason: expect.any(Object),
-        });
+          // 「アイドル宣言」を使った時の hand の更新があるので、効果による手札増加は後ろ側の更新になる
+          (
+            updates
+              .slice()
+              .reverse()
+              .find((e) => e.kind === "hand") as any
+          ).cardIds,
+        ).toHaveLength(2);
+        expect(
+          (updates.find((e) => e.kind === "deck") as any).cardIds,
+        ).toHaveLength(0);
+        // 捨札は変化なしなので、更新自体がない
         expect(updates.filter((e) => e.kind === "discardPile")).toHaveLength(0);
         expect(
-          updates.filter((e) => e.kind === "removedCardPile"),
+          (updates.find((e) => e.kind === "removedCardPile") as any).cardIds,
         ).toHaveLength(1);
       });
-      test("「アイドル宣言」を、山札が足りる・手札最大枚数を超えない状況で使った時、手札が2枚増え、捨札は不変で、除外が1枚増える", () => {
+      test("「アイドル宣言」を、山札が足りない状況で使った時、山札と捨札は再構築される", () => {
         const lesson = createLessonForTest({
           cards: [
             {
@@ -415,42 +407,65 @@ describe("useCard", () => {
               enabled: true,
               enhanced: false,
             },
-            {
-              id: "b",
+            ...["b", "c", "d"].map((id) => ({
+              id,
               definition: getCardDataById("apirunokihon"),
               enabled: true,
               enhanced: false,
-            },
-            {
-              id: "c",
-              definition: getCardDataById("apirunokihon"),
-              enabled: true,
-              enhanced: false,
-            },
+            })),
           ],
         });
         lesson.hand = ["a"];
-        lesson.deck = ["b", "c"];
+        lesson.deck = ["b"];
+        lesson.discardPile = ["c", "d"];
         const { updates } = useCard(lesson, 1, {
           selectedCardInHandIndex: 0,
           getRandom: () => 0,
         });
-        // 手札を使用して捨札に移動した分の更新があるので、効果による手札増加は後ろ側の更新になる
+        // 手札:2, 山札:1, 捨札:0, 除外:1
         expect(
-          updates
-            .slice()
-            .reverse()
-            .find((e) => e.kind === "hand"),
-        ).toStrictEqual({
-          kind: "hand",
-          cardIds: expect.arrayContaining(["a", "b", "c"]),
-          reason: expect.any(Object),
+          (updates.find((e) => e.kind === "deck") as any).cardIds,
+        ).toHaveLength(1);
+        expect(
+          (updates.find((e) => e.kind === "discardPile") as any).cardIds,
+        ).toHaveLength(0);
+      });
+      test("「アイドル宣言」を、手札最大枚数が超える状況で使った時、手札は最大枚数で、捨札が増える", () => {
+        const lesson = createLessonForTest({
+          cards: [
+            {
+              id: "a",
+              definition: getCardDataById("aidorusengen"),
+              enabled: true,
+              enhanced: false,
+            },
+            ...["b", "c", "d", "e", "f", "g"].map((id) => ({
+              id,
+              definition: getCardDataById("apirunokihon"),
+              enabled: true,
+              enhanced: false,
+            })),
+          ],
         });
-        expect(updates.find((e) => e.kind === "deck")).toStrictEqual({
-          kind: "deck",
-          cardIds: [],
-          reason: expect.any(Object),
+        lesson.hand = ["a", "b", "c", "d", "e"];
+        lesson.deck = ["f", "g"];
+        const { updates } = useCard(lesson, 1, {
+          selectedCardInHandIndex: 0,
+          getRandom: () => 0,
         });
+        // 手札:5, 山札:0, 捨札:1, 除外:1
+        expect(
+          // 「アイドル宣言」を使った時の hand の更新があるので、効果による手札増加は後ろ側の更新になる
+          (
+            updates
+              .slice()
+              .reverse()
+              .find((e) => e.kind === "hand") as any
+          ).cardIds,
+        ).toHaveLength(5);
+        expect(
+          (updates.find((e) => e.kind === "discardPile") as any).cardIds,
+        ).toHaveLength(1);
       });
     });
   });

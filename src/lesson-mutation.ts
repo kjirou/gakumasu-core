@@ -11,7 +11,7 @@ import type {
   LessonUpdateQueryReason,
   Modifier,
 } from "./types";
-import { maxHandSize } from "./models";
+import { maxHandSize, patchUpdates } from "./models";
 import { shuffleArray } from "./utils";
 
 const getCardContentDefinition = (card: Card): CardContentDefinition => {
@@ -313,6 +313,9 @@ const computeEffects = (
         }
         break;
       }
+      case "enhanceHand": {
+        break;
+      }
       // default:
       //   const unreachable: never = effect.kind;
       //   throw new Error(`Unreachable statement`);
@@ -341,87 +344,85 @@ export const useCard = (
   }
   const cardContent = getCardContentDefinition(card);
   const beforeVitality = lesson.idol.vitality;
-  const updates: LessonUpdateQuery[] = [];
+  let newLesson = lesson;
   let nextHistoryResultIndex = historyResultIndex;
 
   //
   // 手札を捨札か除外へ移動
   //
-  updates.push({
+  const discardOrRemovedCardUpdates: LessonUpdateQuery[] = [];
+  discardOrRemovedCardUpdates.push({
     kind: "hand",
-    cardIds: lesson.hand.filter((id) => id !== cardId),
+    cardIds: newLesson.hand.filter((id) => id !== cardId),
     reason: {
       kind: "cardUsage",
       cardId,
-      historyTurnNumber: lesson.turnNumber,
+      historyTurnNumber: newLesson.turnNumber,
       historyResultIndex: nextHistoryResultIndex,
     },
   });
   if (cardContent.usableOncePerLesson) {
-    updates.push({
+    discardOrRemovedCardUpdates.push({
       kind: "removedCardPile",
-      cardIds: [...lesson.removedCardPile, cardId],
+      cardIds: [...newLesson.removedCardPile, cardId],
       reason: {
         kind: "cardUsage",
         cardId,
-        historyTurnNumber: lesson.turnNumber,
+        historyTurnNumber: newLesson.turnNumber,
         historyResultIndex: nextHistoryResultIndex,
       },
     });
   } else {
-    updates.push({
+    discardOrRemovedCardUpdates.push({
       kind: "discardPile",
-      cardIds: [...lesson.discardPile, cardId],
+      cardIds: [...newLesson.discardPile, cardId],
       reason: {
         kind: "cardUsage",
         cardId,
-        historyTurnNumber: lesson.turnNumber,
+        historyTurnNumber: newLesson.turnNumber,
         historyResultIndex: nextHistoryResultIndex,
       },
     });
   }
+  newLesson = patchUpdates(newLesson, discardOrRemovedCardUpdates);
   nextHistoryResultIndex++;
 
   //
   // コスト消費
   //
-  const costConsumptionDiffs = calculateCostConsumption(
-    lesson,
+  const costConsumptionUpdates: LessonUpdateQuery[] = calculateCostConsumption(
+    newLesson,
     cardContent.cost,
-  );
-  for (const costConsumptionDiff of costConsumptionDiffs) {
-    updates.push({
-      ...costConsumptionDiff,
-      reason: {
-        kind: "cardUsage",
-        cardId: card.id,
-        historyTurnNumber: lesson.turnNumber,
-        historyResultIndex: nextHistoryResultIndex,
-      },
-    });
-  }
+  ).map((diff) => ({
+    ...diff,
+    reason: {
+      kind: "cardUsage",
+      cardId: card.id,
+      historyTurnNumber: newLesson.turnNumber,
+      historyResultIndex: nextHistoryResultIndex,
+    },
+  }));
+  newLesson = patchUpdates(newLesson, costConsumptionUpdates);
   nextHistoryResultIndex++;
 
   //
   // 効果発動
   //
-  const effectDiffs = computeEffects(
-    lesson,
+  const effectUpdates: LessonUpdateQuery[] = computeEffects(
+    newLesson,
     cardContent.effects,
     params.getRandom,
     beforeVitality,
-  );
-  for (const effectDiff of effectDiffs) {
-    updates.push({
-      ...effectDiff,
-      reason: {
-        kind: "cardUsage",
-        cardId: card.id,
-        historyTurnNumber: lesson.turnNumber,
-        historyResultIndex: nextHistoryResultIndex,
-      },
-    });
-  }
+  ).map((diff) => ({
+    ...diff,
+    reason: {
+      kind: "cardUsage",
+      cardId: card.id,
+      historyTurnNumber: newLesson.turnNumber,
+      historyResultIndex: nextHistoryResultIndex,
+    },
+  }));
+  newLesson = patchUpdates(newLesson, effectUpdates);
   nextHistoryResultIndex++;
 
   //
@@ -438,6 +439,10 @@ export const useCard = (
 
   return {
     nextHistoryResultIndex,
-    updates,
+    updates: [
+      ...discardOrRemovedCardUpdates,
+      ...costConsumptionUpdates,
+      ...effectUpdates,
+    ],
   };
 };
