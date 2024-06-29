@@ -631,12 +631,26 @@ export type CardInProduction = {
   id: string;
 };
 
+// TODO: supportCard は、アイコン表示のためにカードを特定できる必要がある
+type CardEnhancement =
+  | { kind: "effect" }
+  | { kind: "original" }
+  | { kind: "supportCard" };
+
 /**
  * レッスン中のスキルカード
  *
  * - レッスン開始前に生成され、レッスン終了時に破棄される
  */
 export type Card = {
+  /**
+   * カード強化状態
+   *
+   * - 通常強化・「レッスン中強化」・サポートカードによる強化状態
+   * - TODO: [仕様確認] サポカによるレッスン中のカード強化の仕様がわからない
+   *   - 「静かな意志」が、カードの強化＆サポカ強化1で、コストが4から3に下がっていたのは確認した
+   */
+  enhancements: CardEnhancement[];
   /**
    * スキルカードID
    *
@@ -646,14 +660,6 @@ export type Card = {
    */
   id: string;
   original: CardInProduction;
-  /**
-   * レッスン中の一時的な強化状態
-   *
-   * - 「レッスン中強化」や、その他の強化
-   * - TODO: [仕様確認] サポカによるレッスン中のカード強化の仕様がわからない
-   *   - 「静かな意志」が、カードの強化＆サポカ強化1で、コストが4から3に下がっていたのは確認した
-   */
-  temporaryEnhancements: Array<{}>;
 };
 
 export type ProducerItemTrigger = (
@@ -1055,19 +1061,19 @@ export type LessonUpdateQueryReason = (
 export type LessonUpdateQueryDiff =
   | {
       kind: "cardEnhancement";
-      cardId: Card["id"];
+      cardIds: Array<Card["id"]>;
     }
   | {
       kind: "deck";
-      cardIds: Card["id"][];
+      cardIds: Array<Card["id"]>;
     }
   | {
       kind: "discardPile";
-      cardIds: Card["id"][];
+      cardIds: Array<Card["id"]>;
     }
   | {
       kind: "hand";
-      cardIds: Card["id"][];
+      cardIds: Array<Card["id"]>;
     }
   | {
       kind: "life";
@@ -1084,7 +1090,7 @@ export type LessonUpdateQueryDiff =
     }
   | {
       kind: "removedCardPile";
-      cardIds: Card["id"][];
+      cardIds: Array<Card["id"]>;
     }
   | {
       kind: "score";

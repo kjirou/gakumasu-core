@@ -97,7 +97,7 @@ export const prepareCardsForLesson = (
     return {
       id: cardInProduction.id,
       original: cardInProduction,
-      temporaryEnhancements: [],
+      enhancements: cardInProduction.enhanced ? [{ kind: "original" }] : [],
     };
   });
 };

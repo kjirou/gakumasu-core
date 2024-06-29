@@ -15,9 +15,8 @@ import { maxHandSize, patchUpdates } from "./models";
 import { shuffleArray } from "./utils";
 
 const getCardContentDefinition = (card: Card): CardContentDefinition => {
-  // TODO: レッスン中強化やサポートカードによる強化
   return card.original.definition.enhanced !== undefined &&
-    card.original.enhanced
+    card.enhancements.length > 0
     ? card.original.definition.enhanced
     : card.original.definition.base;
 };
