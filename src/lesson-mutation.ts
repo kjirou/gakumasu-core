@@ -2,6 +2,7 @@ import type {
   ActionCost,
   Card,
   CardContentDefinition,
+  Effect,
   GetRandom,
   Idol,
   Lesson,
@@ -262,22 +263,22 @@ const calculateCostConsumption = (
   }
 };
 
-const computeCardUsageUpdates = (
+const computeEffects = (
   lesson: Lesson,
-  card: Card,
+  effects: Effect[],
   getRandom: GetRandom,
   beforeVitality: Idol["vitality"],
 ): LessonUpdateQueryDiff[] => {
-  const cardContent = getCardContentDefinition(card);
   const diffs: LessonUpdateQueryDiff[] = [];
-  for (const effect of cardContent.effects) {
+  for (const effect of effects) {
     // TODO: 効果発動条件の判定
 
     switch (effect.kind) {
+      // 現在は、Pアイテムの「私の「初」の楽譜」にのみ存在し、スキルカードには存在しない効果
       case "drainLife": {
         diffs.push({
           kind: "life",
-          actual: -effect.value,
+          actual: Math.max(-effect.value, -lesson.idol.life),
           max: -effect.value,
         });
         break;
@@ -289,6 +290,27 @@ const computeCardUsageUpdates = (
           lesson.discardPile,
           getRandom,
         );
+        const { hand, discardPile: discardPile2 } = addCardsToHandOrDiscardPile(
+          drawnCards,
+          lesson.hand,
+          discardPile,
+        );
+        diffs.push({
+          kind: "deck",
+          cardIds: deck,
+        });
+        diffs.push({
+          kind: "hand",
+          cardIds: hand,
+        });
+        if (
+          JSON.stringify(lesson.discardPile) !== JSON.stringify(discardPile2)
+        ) {
+          diffs.push({
+            kind: "discardPile",
+            cardIds: discardPile2,
+          });
+        }
         break;
       }
       // default:
@@ -303,6 +325,7 @@ export const useCard = (
   lesson: Lesson,
   historyResultIndex: LessonUpdateQuery["reason"]["historyResultIndex"],
   params: {
+    getRandom: GetRandom;
     selectedCardInHandIndex: number;
   },
 ): LessonMutationResult => {
@@ -362,36 +385,44 @@ export const useCard = (
   //
   // コスト消費
   //
-  const costConsumptions = calculateCostConsumption(lesson, cardContent.cost);
-  for (const costConsumption of costConsumptions) {
-    const reason: LessonUpdateQueryReason = {
-      kind: "cardUsage",
-      cardId: card.id,
-      historyTurnNumber: lesson.turnNumber,
-      historyResultIndex: nextHistoryResultIndex,
-    };
-    if (costConsumption.kind === "modifier") {
-      updates.push({
-        kind: costConsumption.kind,
-        modifierKind: costConsumption.modifierKind,
-        actual: costConsumption.actual,
-        max: costConsumption.max,
-        reason,
-      });
-    } else {
-      updates.push({
-        kind: costConsumption.kind,
-        actual: costConsumption.actual,
-        max: costConsumption.max,
-        reason,
-      });
-    }
+  const costConsumptionDiffs = calculateCostConsumption(
+    lesson,
+    cardContent.cost,
+  );
+  for (const costConsumptionDiff of costConsumptionDiffs) {
+    updates.push({
+      ...costConsumptionDiff,
+      reason: {
+        kind: "cardUsage",
+        cardId: card.id,
+        historyTurnNumber: lesson.turnNumber,
+        historyResultIndex: nextHistoryResultIndex,
+      },
+    });
   }
   nextHistoryResultIndex++;
 
   //
-  // スキルカード使用
+  // 効果発動
   //
+  const effectDiffs = computeEffects(
+    lesson,
+    cardContent.effects,
+    params.getRandom,
+    beforeVitality,
+  );
+  for (const effectDiff of effectDiffs) {
+    updates.push({
+      ...effectDiff,
+      reason: {
+        kind: "cardUsage",
+        cardId: card.id,
+        historyTurnNumber: lesson.turnNumber,
+        historyResultIndex: nextHistoryResultIndex,
+      },
+    });
+  }
+  nextHistoryResultIndex++;
 
   //
   // TODO: スキルカード再使用

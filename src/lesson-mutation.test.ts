@@ -207,6 +207,7 @@ describe("useCard", () => {
       lesson.hand = ["a"];
       const { updates } = useCard(lesson, 1, {
         selectedCardInHandIndex: 0,
+        getRandom: () => 0,
       });
       expect(updates.find((e) => e.kind === "hand")).toStrictEqual({
         kind: "hand",
@@ -234,6 +235,7 @@ describe("useCard", () => {
       lesson.hand = ["a"];
       const { updates } = useCard(lesson, 1, {
         selectedCardInHandIndex: 0,
+        getRandom: () => 0,
       });
       expect(updates.find((e) => e.kind === "hand")).toStrictEqual({
         kind: "hand",
@@ -264,6 +266,7 @@ describe("useCard", () => {
       lesson.idol.vitality = 4;
       const { updates } = useCard(lesson, 1, {
         selectedCardInHandIndex: 0,
+        getRandom: () => 0,
       });
       expect(updates.find((e) => e.kind === "vitality")).toStrictEqual({
         kind: "vitality",
@@ -288,6 +291,7 @@ describe("useCard", () => {
       lesson.idol.vitality = 3;
       const { updates } = useCard(lesson, 1, {
         selectedCardInHandIndex: 0,
+        getRandom: () => 0,
       });
       expect(updates.find((e) => e.kind === "vitality")).toStrictEqual({
         kind: "vitality",
@@ -316,6 +320,7 @@ describe("useCard", () => {
       lesson.hand = ["a"];
       const { updates } = useCard(lesson, 1, {
         selectedCardInHandIndex: 0,
+        getRandom: () => 0,
       });
       expect(updates.find((e) => e.kind === "life")).toStrictEqual({
         kind: "life",
@@ -338,6 +343,7 @@ describe("useCard", () => {
       lesson.hand = ["a"];
       const { updates } = useCard(lesson, 1, {
         selectedCardInHandIndex: 0,
+        getRandom: () => 0,
       });
       expect(updates.find((e) => e.kind === "modifier")).toStrictEqual({
         kind: "modifier",
@@ -345,6 +351,106 @@ describe("useCard", () => {
         actual: -3,
         max: -3,
         reason: expect.any(Object),
+      });
+    });
+  });
+  describe("効果発動", () => {
+    describe("drawCards", () => {
+      test("「アイドル宣言」を、山札が足りる・手札最大枚数を超えない状況で使った時、手札が2枚増え、捨札は不変で、除外が1枚増える", () => {
+        const lesson = createLessonForTest({
+          cards: [
+            {
+              id: "a",
+              definition: getCardDataById("aidorusengen"),
+              enabled: true,
+              enhanced: false,
+            },
+            {
+              id: "b",
+              definition: getCardDataById("apirunokihon"),
+              enabled: true,
+              enhanced: false,
+            },
+            {
+              id: "c",
+              definition: getCardDataById("apirunokihon"),
+              enabled: true,
+              enhanced: false,
+            },
+          ],
+        });
+        lesson.hand = ["a"];
+        lesson.deck = ["b", "c"];
+        const { updates } = useCard(lesson, 1, {
+          selectedCardInHandIndex: 0,
+          getRandom: () => 0,
+        });
+        // 「アイドル宣言」を使った時の hand の更新があるので、効果による手札増加は後ろ側の更新になる
+        expect(
+          updates
+            .slice()
+            .reverse()
+            .find((e) => e.kind === "hand"),
+        ).toStrictEqual({
+          kind: "hand",
+          cardIds: expect.arrayContaining(["a", "b", "c"]),
+          reason: expect.any(Object),
+        });
+        expect(updates.find((e) => e.kind === "deck")).toStrictEqual({
+          kind: "deck",
+          cardIds: [],
+          reason: expect.any(Object),
+        });
+        expect(updates.filter((e) => e.kind === "discardPile")).toHaveLength(0);
+        expect(
+          updates.filter((e) => e.kind === "removedCardPile"),
+        ).toHaveLength(1);
+      });
+      test("「アイドル宣言」を、山札が足りる・手札最大枚数を超えない状況で使った時、手札が2枚増え、捨札は不変で、除外が1枚増える", () => {
+        const lesson = createLessonForTest({
+          cards: [
+            {
+              id: "a",
+              definition: getCardDataById("aidorusengen"),
+              enabled: true,
+              enhanced: false,
+            },
+            {
+              id: "b",
+              definition: getCardDataById("apirunokihon"),
+              enabled: true,
+              enhanced: false,
+            },
+            {
+              id: "c",
+              definition: getCardDataById("apirunokihon"),
+              enabled: true,
+              enhanced: false,
+            },
+          ],
+        });
+        lesson.hand = ["a"];
+        lesson.deck = ["b", "c"];
+        const { updates } = useCard(lesson, 1, {
+          selectedCardInHandIndex: 0,
+          getRandom: () => 0,
+        });
+        // 手札を使用して捨札に移動した分の更新があるので、効果による手札増加は後ろ側の更新になる
+        expect(
+          updates
+            .slice()
+            .reverse()
+            .find((e) => e.kind === "hand"),
+        ).toStrictEqual({
+          kind: "hand",
+          cardIds: expect.arrayContaining(["a", "b", "c"]),
+          reason: expect.any(Object),
+        });
+        expect(updates.find((e) => e.kind === "deck")).toStrictEqual({
+          kind: "deck",
+          cardIds: [],
+          reason: expect.any(Object),
+        });
       });
     });
   });
