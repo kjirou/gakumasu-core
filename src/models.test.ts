@@ -118,6 +118,35 @@ describe("createLessonGamePlay", () => {
   });
 });
 describe("patchUpdates", () => {
+  describe("cardEnhancement", () => {
+    test("it works", () => {
+      const lessonMock = {
+        cards: [
+          {
+            id: "1",
+            enhancements: [] as Card["enhancements"],
+          },
+          {
+            id: "2",
+            enhancements: [] as Card["enhancements"],
+          },
+        ],
+      } as Lesson;
+      const lesson = patchUpdates(lessonMock, [
+        {
+          kind: "cardEnhancement",
+          cardIds: ["1"],
+          reason: {
+            kind: "lessonStartTrigger",
+            historyTurnNumber: 1,
+            historyResultIndex: 1,
+          },
+        },
+      ]);
+      expect(lesson.cards[0].enhancements).toStrictEqual([{ kind: "effect" }]);
+      expect(lesson.cards[1].enhancements).toStrictEqual([]);
+    });
+  });
   describe("hand", () => {
     test("it works", () => {
       const lessonMock = {

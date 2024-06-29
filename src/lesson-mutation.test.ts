@@ -468,5 +468,46 @@ describe("useCard", () => {
         ).toHaveLength(1);
       });
     });
+    describe("enhanceHand", () => {
+      test("「ティーパーティ」は、自分以外の、プロデュース中まははレッスン中に強化していない手札のみを強化する", () => {
+        const lesson = createLessonForTest({
+          cards: [
+            {
+              id: "a",
+              definition: getCardDataById("teipatei"),
+              enabled: true,
+              enhanced: false,
+            },
+            ...["b", "c", "d"].map((id) => ({
+              id,
+              definition: getCardDataById("apirunokihon"),
+              enabled: true,
+              enhanced: false,
+            })),
+            ...["e"].map((id) => ({
+              id,
+              definition: getCardDataById("apirunokihon"),
+              enabled: true,
+              enhanced: true,
+            })),
+          ],
+        });
+        lesson.hand = ["a", "b", "c", "d", "e"];
+        const dCard = lesson.cards.find((e) => e.id === "d") as Card;
+        dCard.enhancements = [{ kind: "effect" }];
+        const { updates } = useCard(lesson, 1, {
+          selectedCardInHandIndex: 0,
+          getRandom: () => 0,
+        });
+        const enhancedCardIds = (
+          updates.find((e) => e.kind === "cardEnhancement") as any
+        ).cardIds;
+        expect(enhancedCardIds).not.toContain("a");
+        expect(enhancedCardIds).toContain("b");
+        expect(enhancedCardIds).toContain("c");
+        expect(enhancedCardIds).not.toContain("d");
+        expect(enhancedCardIds).not.toContain("e");
+      });
+    });
   });
 });

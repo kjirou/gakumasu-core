@@ -144,6 +144,13 @@ export const createLessonGamePlay = (params: {
   };
 };
 
+/**
+ * レッスン更新クエリを適用した結果のレッスンを返す
+ *
+ * - Redux の Action のような、単純な setter の塊
+ *   - ロジックはなるべく含まない
+ *     - 例えば、バリデーションや閾値処理などは、更新クエリを生成する際に行う
+ */
 export const patchUpdates = (
   lesson: Lesson,
   updates: LessonUpdateQuery[],
@@ -151,6 +158,19 @@ export const patchUpdates = (
   let newLesson = { ...lesson };
   for (const update of updates) {
     switch (update.kind) {
+      case "cardEnhancement": {
+        newLesson = {
+          ...newLesson,
+          cards: newLesson.cards.map((card) => {
+            return update.cardIds.includes(card.id)
+              ? {
+                  ...card,
+                  enhancements: [...card.enhancements, { kind: "effect" }],
+                }
+              : card;
+          }),
+        };
+      }
       case "deck": {
         newLesson = {
           ...newLesson,

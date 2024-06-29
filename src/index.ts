@@ -39,25 +39,47 @@ import {
   useCard,
 } from "./lesson-mutation";
 import { handSizeOnLessonStart, patchUpdates } from "./models";
-import { shuffleArray } from "./utils";
 
 //
 // UI側での想定の呼び出し方
 //
+// ゲーム開始:
 // ```
 // const lessonGamePlay = createLessonGamePlay();
+// ```
 //
-// const onStartGame = () => {
-//   setState(startLessonTurn(lessonGamePlay))
-// };
+// ターン開始:
+// ```
+// const newLessonGamePlay = startLessonTurn(lessonGamePlay);
+// const recentUpdates = newLessonGamePlay.updates.slice(lessonGamePlay.updates.length);
+// set状態遷移アニメーション(recentUpdates);
+// // アニメーション設定がある場合は、それが終わるまで表示上反映されない
+// setLesson(最新のLessonの状態を返す(newLessonGamePlay));
+// ```
 //
-// const onPressCard = () => {
-//   setState(selectCard(lessonGamePlay, cardInHandIndex))
-// };
+// カード選択してスキルカード使用プレビュー:
+// ```
+// // 使用できない状況のカードでもプレビューはできる、また、連鎖するPアイテム効果などはプレビュー表示されない
+// const newLessonGamePlay = useCard(lessonGamePlay, cardInHandIndex, { preview: true });
+// const recentUpdates = newLessonGamePlay.updates.slice(lessonGamePlay.updates.length);
+// // プレビューは差分表示されるがアニメーションはされない
+// const setプレビュー用Updates(recentUpdates)
+// ```
 //
-// const onPress休憩 = () => {
-//   setState(skipTurn(lessonGamePlay));
-// };
+// 手札のスキルカードを表示:
+// ```
+// // スキルカードIDと選択可能かの状態のリスト
+// const 手札リスト = 手札を取得する(lessonGamePlay);
+// const set手札リスト(手札リスト)
+// ```
+//
+// カード選択してスキルカード使用:
+// ```
+// const newLessonGamePlay = useCard(lessonGamePlay, cardInHandIndex);
+// const recentUpdates = newLessonGamePlay.updates.slice(lessonGamePlay.updates.length);
+// set状態遷移アニメーション(recentUpdates);
+// // アニメーション設定がある場合は、それが終わるまで表示上反映されない
+// setLesson(最新のLessonの状態を返す(newLessonGamePlay));
 // ```
 //
 
@@ -103,6 +125,8 @@ export const startLessonTurn = (
 
 /**
  * スキルカードを選択する
+ *
+ * TODO: プレビューはUI側の都合として分けるから、selectCard じゃなくて useCard にすべき。その useCard の updates 結果を使って、プレビューを UI 側で作る。
  *
  * - スキルカードを選択し、結果のプレビュー表示または使用を行う
  * - TODO: Pアイテムなどによる誘発された効果も、プレビューに反映されてる？

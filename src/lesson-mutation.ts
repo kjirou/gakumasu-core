@@ -313,6 +313,22 @@ const computeEffects = (
         break;
       }
       case "enhanceHand": {
+        diffs.push({
+          kind: "cardEnhancement",
+          // 手札の中で強化されていないスキルカードのみを対象にする
+          cardIds: lesson.hand.filter((id) => {
+            const card = lesson.cards.find((card) => card.id === id);
+            // この分岐に入ることはない想定、型ガード用
+            if (!card) {
+              return false;
+            }
+            return (
+              card.enhancements.find(
+                (e) => e.kind === "original" || e.kind === "effect",
+              ) === undefined
+            );
+          }),
+        });
         break;
       }
       // default:

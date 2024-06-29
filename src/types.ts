@@ -633,9 +633,19 @@ export type CardInProduction = {
 
 // TODO: supportCard は、アイコン表示のためにカードを特定できる必要がある
 type CardEnhancement =
-  | { kind: "effect" }
-  | { kind: "original" }
-  | { kind: "supportCard" };
+  | {
+      /** レッスン中の強化により付与された強化、原文の「レッスン中強化」に相当、"original"や既に"effect"がある場合は付与されない */
+      kind: "effect";
+    }
+  | {
+      /** プロデュース中のスキルカードに付与されている強化 */
+      kind: "original";
+    }
+  | {
+      /** レッスン開始時に付与されるサポートカードによる強化、この強化のみ累積して効果がある */
+      kind: "supportCard";
+      supportCardId: string;
+    };
 
 /**
  * レッスン中のスキルカード
