@@ -2116,7 +2116,7 @@ export const cards: CardDefinition[] = [
     },
   },
   {
-    id: "zonzaikan",
+    id: "sonzaikan",
     name: "存在感",
     cardPossessionKind: "sense",
     cardProviderKind: "others",

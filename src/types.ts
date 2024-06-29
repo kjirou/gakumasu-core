@@ -1105,10 +1105,13 @@ export type LessonUpdateQueryDiff =
       max: number;
     }
   | {
+      /**
+       * 状態修正の差分
+       *
+       * - life や vitality とは異なり、現状使うとこがなさそうなので max は付与していない
+       */
       kind: "modifier";
-      modifierKind: Modifier["kind"];
-      actual: number;
-      max: number;
+      modifier: Modifier;
     }
   | {
       kind: "removedCardPile";

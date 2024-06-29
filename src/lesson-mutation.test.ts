@@ -441,7 +441,7 @@ describe("useCard", () => {
         reason: expect.any(Object),
       });
     });
-    test("modifierのひとつ", () => {
+    test("プロパティにamountがあるmodifier", () => {
       const lesson = createLessonForTest({
         cards: [
           {
@@ -459,9 +459,35 @@ describe("useCard", () => {
       });
       expect(updates.find((e) => e.kind === "modifier")).toStrictEqual({
         kind: "modifier",
-        modifierKind: "motivation",
-        actual: -3,
-        max: -3,
+        modifier: {
+          kind: "motivation",
+          amount: 3,
+        },
+        reason: expect.any(Object),
+      });
+    });
+    test("プロパティにdurationがあるmodifier", () => {
+      const lesson = createLessonForTest({
+        cards: [
+          {
+            id: "a",
+            definition: getCardDataById("sonzaikan"),
+            enabled: true,
+            enhanced: false,
+          },
+        ],
+      });
+      lesson.hand = ["a"];
+      const { updates } = useCard(lesson, 1, {
+        selectedCardInHandIndex: 0,
+        getRandom: () => 0,
+      });
+      expect(updates.find((e) => e.kind === "modifier")).toStrictEqual({
+        kind: "modifier",
+        modifier: {
+          kind: "goodCondition",
+          duration: 2,
+        },
         reason: expect.any(Object),
       });
     });

@@ -271,17 +271,29 @@ const calculateCostConsumption = (
       ];
     }
     case "focus":
-    case "goodCondition":
     case "motivation":
-    case "positiveImpression":
+    case "positiveImpression": {
       return [
         {
           kind: "modifier",
-          modifierKind: cost.kind,
-          actual: -cost.value,
-          max: -cost.value,
+          modifier: {
+            kind: cost.kind,
+            amount: cost.value,
+          },
         },
       ];
+    }
+    case "goodCondition": {
+      return [
+        {
+          kind: "modifier",
+          modifier: {
+            kind: cost.kind,
+            duration: cost.value,
+          },
+        },
+      ];
+    }
     default:
       const unreachable: never = cost.kind;
       throw new Error(`Unreachable statement`);
