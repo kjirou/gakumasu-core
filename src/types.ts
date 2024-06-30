@@ -1105,18 +1105,6 @@ export type LessonUpdateQueryDiff =
       removedCardPile?: Lesson["removedCardPile"];
     }
   | {
-      kind: "deck";
-      cardIds: Array<Card["id"]>;
-    }
-  | {
-      kind: "discardPile";
-      cardIds: Array<Card["id"]>;
-    }
-  | {
-      kind: "hand";
-      cardIds: Array<Card["id"]>;
-    }
-  | {
       kind: "life";
       /** アイドルの状態へ実際に影響を与える数値。例えば、残り体力1の時に、トラブルの体力減少で3減らされた時は1になる。 */
       actual: number;
@@ -1131,10 +1119,6 @@ export type LessonUpdateQueryDiff =
        */
       kind: "modifier";
       modifier: Modifier;
-    }
-  | {
-      kind: "removedCardPile";
-      cardIds: Array<Card["id"]>;
     }
   | {
       kind: "score";

@@ -11,7 +11,11 @@ import type {
   LessonUpdateQueryReason,
   Modifier,
 } from "./types";
-import { maxHandSize, patchUpdates } from "./models";
+import {
+  calculateClearScoreProgress,
+  maxHandSize,
+  patchUpdates,
+} from "./models";
 import { shuffleArray } from "./utils";
 
 const getCardContentDefinition = (card: Card): CardContentDefinition => {
@@ -423,7 +427,7 @@ const computeEffects = (
         });
         break;
       }
-      case "exchangeHand":
+      case "exchangeHand": {
         const discardPile1 = [...lesson.discardPile, ...lesson.hand];
         const {
           deck,
@@ -455,6 +459,7 @@ const computeEffects = (
           ),
         );
         break;
+      }
       case "getModifier": {
         diffs.push({
           kind: "modifier",
@@ -464,11 +469,21 @@ const computeEffects = (
       }
       case "perform": {
         if (effect.score) {
+          let remainingIncrementableScore: number | undefined;
+          if (lesson.clearScoreThresholds !== undefined) {
+            const progress = calculateClearScoreProgress(
+              lesson.score,
+              lesson.clearScoreThresholds,
+            );
+            if (progress.remainingPerfectScore !== undefined) {
+              remainingIncrementableScore = progress.remainingPerfectScore;
+            }
+          }
           diffs = [
             ...diffs,
             ...calculatePerformingScoreEffect(
               lesson.idol,
-              undefined,
+              remainingIncrementableScore,
               effect.score,
             ),
           ];

@@ -3,6 +3,7 @@ import { getCardDataById } from "./data/card";
 import { getIdolDataById } from "./data/idol";
 import { getProducerItemDataById } from "./data/producer-item";
 import {
+  calculateClearScoreProgress,
   createIdolInProduction,
   createLessonGamePlay,
   patchUpdates,
@@ -65,6 +66,59 @@ describe("createIdolInProduction", () => {
       ],
     });
   });
+});
+describe("calculateClearScoreProgress", () => {
+  const testCases: Array<{
+    args: Parameters<typeof calculateClearScoreProgress>;
+    expected: ReturnType<typeof calculateClearScoreProgress>;
+  }> = [
+    {
+      args: [0, { clear: 100 }],
+      expected: {
+        necessaryClearScore: 100,
+        necessaryPerfectScore: undefined,
+        remainingClearScore: 100,
+        remainingPerfectScore: undefined,
+        clearScoreProgressPercentage: 0,
+      },
+    },
+    {
+      args: [10, { clear: 1000 }],
+      expected: {
+        necessaryClearScore: 1000,
+        necessaryPerfectScore: undefined,
+        remainingClearScore: 990,
+        remainingPerfectScore: undefined,
+        clearScoreProgressPercentage: 1,
+      },
+    },
+    {
+      args: [9, { clear: 1000 }],
+      expected: {
+        necessaryClearScore: 1000,
+        necessaryPerfectScore: undefined,
+        remainingClearScore: 991,
+        remainingPerfectScore: undefined,
+        clearScoreProgressPercentage: 0,
+      },
+    },
+    {
+      args: [50, { clear: 100, perfect: 300 }],
+      expected: {
+        necessaryClearScore: 100,
+        necessaryPerfectScore: 300,
+        remainingClearScore: 50,
+        remainingPerfectScore: 250,
+        clearScoreProgressPercentage: 50,
+      },
+    },
+  ];
+  test.each(testCases)(
+    "$args.0, $args.1 => $expected",
+    ({ args, expected }) => {
+      expect(calculateClearScoreProgress(...args)).toStrictEqual(expected);
+    },
+  );
 });
 describe("createLessonGamePlay", () => {
   test("it creates a lesson game play", () => {
@@ -731,6 +785,26 @@ describe("patchUpdates", () => {
         },
       ]);
       expect(lesson.selectedCardInHandIndex).toBe(1);
+    });
+  });
+  describe("score", () => {
+    test("it works", () => {
+      let lessonMock = {
+        score: 1,
+      } as Lesson;
+      lessonMock = patchUpdates(lessonMock, [
+        {
+          kind: "score",
+          actual: 2,
+          max: 3,
+          reason: {
+            kind: "lessonStartTrigger",
+            historyTurnNumber: 1,
+            historyResultIndex: 1,
+          },
+        },
+      ]);
+      expect(lessonMock.score).toBe(3);
     });
   });
   describe("vitality", () => {

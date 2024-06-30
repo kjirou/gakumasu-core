@@ -131,6 +131,9 @@ export const createLesson = (params: {
   };
 };
 
+/**
+ * レッスンのクリアに対するスコア進捗を計算する
+ */
 export const calculateClearScoreProgress = (
   score: Lesson["score"],
   clearScoreThresholds: NonNullable<Lesson["clearScoreThresholds"]>,
@@ -334,6 +337,13 @@ export const patchUpdates = (
             },
           };
         }
+      }
+      case "score": {
+        newLesson = {
+          ...newLesson,
+          score: newLesson.score + update.actual,
+        };
+        break;
       }
       case "selectedCardInHandIndex": {
         newLesson = {

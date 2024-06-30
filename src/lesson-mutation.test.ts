@@ -853,5 +853,100 @@ describe("useCard", () => {
         });
       });
     });
+    // calculatePerformingScoreEffect のテストで検証できる内容はそちらで行う
+    describe("perform", () => {
+      test("レッスンにスコア上限がある時、スコアはそれを超えない増加値を返す", () => {
+        const lesson = createLessonForTest({
+          cards: [
+            {
+              id: "a",
+              definition: getCardDataById("apirunokihon"),
+              enabled: true,
+              enhanced: false,
+            },
+          ],
+        });
+        lesson.hand = ["a"];
+        lesson.score = 9;
+        lesson.clearScoreThresholds = {
+          clear: 5,
+          perfect: 10,
+        };
+        const { updates } = useCard(lesson, 1, {
+          selectedCardInHandIndex: 0,
+          getRandom: () => 0,
+        });
+        const filtered = updates.filter((e) => e.kind === "score") as any[];
+        expect(filtered).toStrictEqual([
+          {
+            kind: "score",
+            actual: 1,
+            max: 9,
+            reason: expect.any(Object),
+          },
+        ]);
+      });
+      test("クリアスコアの設定だけありパーフェクトの設定がない時、レッスンにスコア上限はないと判断する", () => {
+        const lesson = createLessonForTest({
+          cards: [
+            {
+              id: "a",
+              definition: getCardDataById("apirunokihon"),
+              enabled: true,
+              enhanced: false,
+            },
+          ],
+        });
+        lesson.hand = ["a"];
+        lesson.clearScoreThresholds = {
+          clear: 1,
+        };
+        const { updates } = useCard(lesson, 1, {
+          selectedCardInHandIndex: 0,
+          getRandom: () => 0,
+        });
+        const filtered = updates.filter((e) => e.kind === "score") as any[];
+        expect(filtered).toStrictEqual([
+          {
+            kind: "score",
+            actual: 9,
+            max: 9,
+            reason: expect.any(Object),
+          },
+        ]);
+      });
+      test("複数の更新を生成するスコア増加を返せる", () => {
+        const lesson = createLessonForTest({
+          cards: [
+            {
+              id: "a",
+              definition: getCardDataById("shikosakugo"),
+              enabled: true,
+              enhanced: false,
+            },
+          ],
+        });
+        lesson.hand = ["a"];
+        const { updates } = useCard(lesson, 1, {
+          selectedCardInHandIndex: 0,
+          getRandom: () => 0,
+        });
+        const filtered = updates.filter((e) => e.kind === "score") as any[];
+        expect(filtered).toStrictEqual([
+          {
+            kind: "score",
+            actual: 8,
+            max: 8,
+            reason: expect.any(Object),
+          },
+          {
+            kind: "score",
+            actual: 8,
+            max: 8,
+            reason: expect.any(Object),
+          },
+        ]);
+      });
+    });
   });
 });
