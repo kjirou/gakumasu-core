@@ -1266,6 +1266,179 @@ describe("useCard", () => {
           reason: expect.any(Object),
         });
       });
+      test("結果的にスコアが0なら、更新しない", () => {
+        const lesson = createLessonForTest({
+          cards: [
+            {
+              id: "a",
+              definition: getCardDataById("kaika"),
+              enabled: true,
+              enhanced: false,
+            },
+          ],
+        });
+        lesson.hand = ["a"];
+        const { updates } = useCard(lesson, 1, {
+          selectedCardInHandIndex: 0,
+          getRandom: () => 0,
+          idGenerator: createIdGenerator(),
+        });
+        expect(updates.find((e) => e.kind === "score")).toBeUndefined();
+      });
+    });
+    describe("performLeveragingVitality", () => {
+      test("通常", () => {
+        const lesson = createLessonForTest({
+          cards: [
+            {
+              id: "a",
+              definition: getCardDataById("genkinaaisatsu"),
+              enabled: true,
+              enhanced: false,
+            },
+          ],
+        });
+        lesson.hand = ["a"];
+        lesson.idol.vitality = 10;
+        const { updates } = useCard(lesson, 1, {
+          selectedCardInHandIndex: 0,
+          getRandom: () => 0,
+          idGenerator: createIdGenerator(),
+        });
+        const update = updates.find((e) => e.kind === "score") as any;
+        expect(update).toStrictEqual({
+          kind: "score",
+          actual: 11,
+          max: 11,
+          reason: expect.any(Object),
+        });
+      });
+      test("50%の元気を消費、端数は切り捨て", () => {
+        const lesson = createLessonForTest({
+          cards: [
+            {
+              id: "a",
+              definition: getCardDataById("hatonoaizu"),
+              enabled: true,
+              enhanced: false,
+            },
+          ],
+        });
+        lesson.hand = ["a"];
+        lesson.idol.vitality = 11;
+        const { updates } = useCard(lesson, 1, {
+          selectedCardInHandIndex: 0,
+          getRandom: () => 0,
+          idGenerator: createIdGenerator(),
+        });
+        const update = updates.find((e) => e.kind === "vitality") as any;
+        expect(update).toStrictEqual({
+          kind: "vitality",
+          actual: -5,
+          max: -5,
+          reason: expect.any(Object),
+        });
+      });
+      test("100%の元気を消費", () => {
+        const lesson = createLessonForTest({
+          cards: [
+            {
+              id: "a",
+              definition: getCardDataById("todoite"),
+              enabled: true,
+              enhanced: false,
+            },
+          ],
+        });
+        lesson.hand = ["a"];
+        lesson.idol.vitality = 10;
+        const { updates } = useCard(lesson, 1, {
+          selectedCardInHandIndex: 0,
+          getRandom: () => 0,
+          idGenerator: createIdGenerator(),
+        });
+        const update = updates.find((e) => e.kind === "vitality") as any;
+        expect(update).toStrictEqual({
+          kind: "vitality",
+          actual: -10,
+          max: -10,
+          reason: expect.any(Object),
+        });
+      });
+      test("スコアも消費元気も、どちらも結果的に0なら、更新しない", () => {
+        const lesson = createLessonForTest({
+          cards: [
+            {
+              id: "a",
+              definition: getCardDataById("hatonoaizu"),
+              enabled: true,
+              enhanced: false,
+            },
+          ],
+        });
+        lesson.hand = ["a"];
+        const { updates } = useCard(lesson, 1, {
+          selectedCardInHandIndex: 0,
+          getRandom: () => 0,
+          idGenerator: createIdGenerator(),
+        });
+        expect(updates.find((e) => e.kind === "vitality")).toBeUndefined();
+        expect(updates.find((e) => e.kind === "score")).toBeUndefined();
+      });
+    });
+    describe("recoverLife", () => {
+      test("通常", () => {
+        const lesson = createLessonForTest({
+          cards: [
+            {
+              id: "a",
+              definition: getCardDataById("hoyoryoku"),
+              enabled: true,
+              enhanced: false,
+            },
+          ],
+        });
+        lesson.hand = ["a"];
+        lesson.idol.life = 10;
+        const { updates } = useCard(lesson, 1, {
+          selectedCardInHandIndex: 0,
+          getRandom: () => 0,
+          idGenerator: createIdGenerator(),
+        });
+        const update = updates.find((e) => e.kind === "life") as any;
+        expect(update).toStrictEqual({
+          kind: "life",
+          actual: 2,
+          max: 2,
+          reason: expect.any(Object),
+        });
+      });
+      test("体力上限を超えて回復しない", () => {
+        const lesson = createLessonForTest({
+          cards: [
+            {
+              id: "a",
+              definition: getCardDataById("hoyoryoku"),
+              enabled: true,
+              enhanced: false,
+            },
+          ],
+        });
+        lesson.hand = ["a"];
+        lesson.idol.life = lesson.idol.original.maxLife;
+        const { updates } = useCard(lesson, 1, {
+          selectedCardInHandIndex: 0,
+          getRandom: () => 0,
+          idGenerator: createIdGenerator(),
+        });
+        const update = updates.find((e) => e.kind === "life") as any;
+        expect(update).toStrictEqual({
+          kind: "life",
+          actual: 0,
+          max: 2,
+          reason: expect.any(Object),
+        });
+      });
     });
   });
 });

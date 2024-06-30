@@ -415,7 +415,7 @@ export type Effect = (
        * - 原文の構文は、「{modifierKind}の{percentage}%分パラメータ上昇」
        *   - 「200%スマイル」は、「好印象の100%分パラメータ上昇」
        *   - 「開花」は、「やる気の200%分パラメータ上昇」
-       * - TODO: そのスキルカード使用時に別効果で含まれる状態修正を含むのか？
+       * - 割合計算上生じるスコアの端数は切り上げ
        */
       kind: "performLeveragingModifier";
       modifierKind: "motivation" | "positiveImpression";
@@ -431,6 +431,7 @@ export type Effect = (
        * - 原文は「元気を{modifierReductionKind}にして、減少前の元気の{percentage}%分パラメータ上昇」
        *   - 「ハートの合図」は「元気を半分にして、減少前の元気の130%分パラメータ上昇」
        *   - 「届いて！」は「元気を0にして、減少前の元気の160%分パラメータ上昇」
+       * - 割合計算上生じるスコアの端数は切り上げ
        */
       reductionKind?: "halve" | "zero";
       /** 状態修正値に対するパーセント表記の乗数、原文は「元気の{percentage}%分パラメータ上昇」 */

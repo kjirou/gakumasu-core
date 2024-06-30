@@ -3473,7 +3473,7 @@ export const cards: CardDefinition[] = [
         {
           kind: "performLeveragingVitality",
           reductionKind: "zero",
-          percentage: 250,
+          percentage: 160,
         },
       ],
       usableOncePerLesson: true,

@@ -398,7 +398,6 @@ const computeEffects = (
   getRandom: GetRandom,
   idGenerator: IdGenerator,
 ): LessonUpdateQueryDiff[] => {
-  const beforeVitality = lesson.idol.vitality;
   let remainingIncrementableScore: number | undefined;
   if (lesson.clearScoreThresholds !== undefined) {
     const progress = calculateClearScoreProgress(
@@ -610,19 +609,60 @@ const computeEffects = (
             const unreachable: never = effect;
             throw new Error(`Unreachable statement`);
         }
+        if (score > 0) {
+          diffs.push({
+            kind: "score",
+            actual:
+              remainingIncrementableScore !== undefined
+                ? Math.min(score, remainingIncrementableScore)
+                : score,
+            max: score,
+          });
+        }
+        break;
+      }
+      case "performLeveragingVitality": {
+        // 本家のインタラクションや効果説明上、先に元気を減少させる
+        if (effect.reductionKind !== undefined) {
+          const reductionRate = effect.reductionKind === "zero" ? 1.0 : 0.5;
+          const value = Math.floor(lesson.idol.vitality * reductionRate);
+          if (value > 0) {
+            diffs.push({
+              kind: "vitality",
+              actual: -value,
+              max: -value,
+            });
+          }
+        }
+        const score = Math.ceil(
+          (lesson.idol.vitality * effect.percentage) / 100,
+        );
+        if (score > 0) {
+          diffs.push({
+            kind: "score",
+            actual:
+              remainingIncrementableScore !== undefined
+                ? Math.min(score, remainingIncrementableScore)
+                : score,
+            max: score,
+          });
+        }
+        break;
+      }
+      case "recoverLife": {
         diffs.push({
-          kind: "score",
-          actual:
-            remainingIncrementableScore !== undefined
-              ? Math.min(score, remainingIncrementableScore)
-              : score,
-          max: score,
+          kind: "life",
+          actual: Math.min(
+            effect.value,
+            lesson.idol.original.maxLife - lesson.idol.life,
+          ),
+          max: effect.value,
         });
         break;
       }
-      // default:
-      //   const unreachable: never = effect.kind;
-      //   throw new Error(`Unreachable statement`);
+      default:
+        const unreachable: never = effect;
+        throw new Error(`Unreachable statement`);
     }
   }
   return diffs;
