@@ -128,6 +128,7 @@ export const createLesson = (params: {
     selectedCardInHandIndex: undefined,
     score: 0,
     turnNumber: 1,
+    remainingTurns: 0,
   };
 };
 
@@ -338,6 +339,13 @@ export const patchUpdates = (
           };
         }
       }
+      case "remainingTurns": {
+        newLesson = {
+          ...newLesson,
+          remainingTurns: newLesson.remainingTurns + update.amount,
+        };
+        break;
+      }
       case "score": {
         newLesson = {
           ...newLesson,
@@ -352,6 +360,13 @@ export const patchUpdates = (
         };
         break;
       }
+      case "turnNumberIncrease": {
+        newLesson = {
+          ...newLesson,
+          turnNumber: newLesson.turnNumber + 1,
+        };
+        break;
+      }
       case "vitality": {
         newLesson = {
           ...newLesson,
@@ -362,9 +377,9 @@ export const patchUpdates = (
         };
         break;
       }
-      // TODO: 後で never を使うのに書き直す
       default: {
-        throw new Error(`Unexpected update kind: ${update.kind}`);
+        const unreachable: never = update;
+        throw new Error(`Unreachable statement`);
       }
     }
   }

@@ -926,6 +926,31 @@ describe("useCard", () => {
         });
       });
     });
+    describe("increaseRemainingTurns", () => {
+      test("it works", () => {
+        const lesson = createLessonForTest({
+          cards: [
+            {
+              id: "a",
+              definition: getCardDataById("watashigasta"),
+              enabled: true,
+              enhanced: false,
+            },
+          ],
+        });
+        lesson.hand = ["a"];
+        const { updates } = useCard(lesson, 1, {
+          selectedCardInHandIndex: 0,
+          getRandom: () => 0,
+        });
+        const update = updates.find((e) => e.kind === "remainingTurns") as any;
+        expect(update).toStrictEqual({
+          kind: "remainingTurns",
+          amount: 1,
+          reason: expect.any(Object),
+        });
+      });
+    });
     // calculatePerformingScoreEffect と calculatePerformingVitalityEffect のテストで検証できる内容はそちらで行う
     describe("perform", () => {
       test("レッスンにスコア上限がある時、スコアはそれを超えない増加値を返す", () => {

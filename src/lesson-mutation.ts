@@ -495,6 +495,13 @@ const computeEffects = (
         });
         break;
       }
+      case "increaseRemainingTurns": {
+        diffs.push({
+          kind: "remainingTurns",
+          amount: effect.amount,
+        });
+        break;
+      }
       case "perform": {
         if (effect.score) {
           let remainingIncrementableScore: number | undefined;

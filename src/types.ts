@@ -960,6 +960,8 @@ export type Lesson = {
   idol: Idol;
   /** 最終ターン数、この値と同じターン数目の行動で終了、「ターン追加」の効果は含まない */
   lastTurnNumber: number;
+  /** 最終ターン数への修正、現状は「ターン追加」効果により増加する状況しか考慮していない、つまり常に正の数 */
+  remainingTurns: number;
   /** 除外されたカード群、原文は「除外」、山札の再生成時に含まれないカード群 */
   removedCardPile: Array<Card["id"]>;
   /** 選択中の手札インデックス */
@@ -1119,6 +1121,10 @@ export type LessonUpdateQueryDiff =
        */
       kind: "modifier";
       modifier: Modifier;
+    }
+  | {
+      kind: "remainingTurns";
+      amount: number;
     }
   | {
       kind: "score";

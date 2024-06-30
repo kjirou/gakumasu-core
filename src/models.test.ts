@@ -167,6 +167,7 @@ describe("createLessonGamePlay", () => {
         score: 0,
         turnNumber: 1,
         lastTurnNumber: 6,
+        remainingTurns: 0,
       },
       updates: [],
     });
@@ -768,6 +769,25 @@ describe("patchUpdates", () => {
       expect(lessonMock.idol.life).toBe(3);
     });
   });
+  describe("remainingTurns", () => {
+    test("it works", () => {
+      let lessonMock = {
+        remainingTurns: 0,
+      } as Lesson;
+      lessonMock = patchUpdates(lessonMock, [
+        {
+          kind: "remainingTurns",
+          amount: 1,
+          reason: {
+            kind: "lessonStartTrigger",
+            historyTurnNumber: 1,
+            historyResultIndex: 1,
+          },
+        },
+      ]);
+      expect(lessonMock.remainingTurns).toBe(1);
+    });
+  });
   describe("selectedCardInHandIndex", () => {
     test("it works", () => {
       const lessonMock = {
@@ -805,6 +825,24 @@ describe("patchUpdates", () => {
         },
       ]);
       expect(lessonMock.score).toBe(3);
+    });
+  });
+  describe("turnNumberIncrease", () => {
+    test("it works", () => {
+      let lessonMock = {
+        turnNumber: 0,
+      } as Lesson;
+      lessonMock = patchUpdates(lessonMock, [
+        {
+          kind: "turnNumberIncrease",
+          reason: {
+            kind: "lessonStartTrigger",
+            historyTurnNumber: 1,
+            historyResultIndex: 1,
+          },
+        },
+      ]);
+      expect(lessonMock.turnNumber).toBe(1);
     });
   });
   describe("vitality", () => {
