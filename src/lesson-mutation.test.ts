@@ -1,6 +1,7 @@
 import {
   Card,
   CardInProduction,
+  Idol,
   IdolDefinition,
   IdolInProduction,
   Lesson,
@@ -8,6 +9,7 @@ import {
 import { cards, getCardDataById } from "./data/card";
 import {
   addCardsToHandOrDiscardPile,
+  calculatePerformingScoreEffect,
   createCardPlacementDiff,
   drawCardsFromDeck,
   drawCardsOnLessonStart,
@@ -297,6 +299,155 @@ describe("drawCardsOnLessonStart", () => {
     expect(update.removedCardPile).toBeUndefined();
   });
 });
+describe("calculatePerformingScoreEffect", () => {
+  const testCases: {
+    args: Parameters<typeof calculatePerformingScoreEffect>;
+    expected: ReturnType<typeof calculatePerformingScoreEffect>;
+    name: string;
+  }[] = [
+    {
+      name: "状態変化などの条件がない時、指定通りのスコアを返す",
+      args: [
+        {
+          modifiers: [] as Idol["modifiers"],
+        } as Idol,
+        undefined,
+        { value: 9 },
+      ],
+      expected: [{ kind: "score", actual: 9, max: 9 }],
+    },
+    {
+      name: "アイドルへ好調のみが付与されている時、1.5倍（端数切り上げ）したスコアを返す",
+      args: [
+        {
+          modifiers: [{ kind: "goodCondition", duration: 1 }],
+        } as Idol,
+        undefined,
+        { value: 9 },
+      ],
+      expected: [{ kind: "score", actual: 14, max: 14 }],
+    },
+    {
+      name: "アイドルへ集中のみが付与されている時、その分を加算したスコアを返す",
+      args: [
+        {
+          modifiers: [{ kind: "focus", amount: 1 }],
+        } as Idol,
+        undefined,
+        { value: 9 },
+      ],
+      expected: [{ kind: "score", actual: 10, max: 10 }],
+    },
+    {
+      name: "アイドルへ好調と集中が付与されている時、集中分も好調の倍率の影響を受ける",
+      args: [
+        {
+          modifiers: [
+            { kind: "goodCondition", duration: 1 },
+            { kind: "focus", amount: 3 },
+          ],
+        } as Idol,
+        undefined,
+        { value: 1 },
+      ],
+      expected: [{ kind: "score", actual: 6, max: 6 }],
+    },
+    {
+      name: "アイドルへ好調と絶好調が付与されている時、(1.5 + 好調ターン数 * 0.1)倍したスコアを返す",
+      args: [
+        {
+          modifiers: [
+            { kind: "goodCondition", duration: 5 },
+            { kind: "excellentCondition", duration: 1 },
+          ],
+        } as Idol,
+        undefined,
+        { value: 10 },
+      ],
+      expected: [{ kind: "score", actual: 20, max: 20 }],
+    },
+    {
+      name: "アイドルへ絶好調のみが付与されている時、好調の効果は発動しない",
+      args: [
+        {
+          modifiers: [{ kind: "excellentCondition", duration: 1 }],
+        } as Idol,
+        undefined,
+        { value: 10 },
+      ],
+      expected: [{ kind: "score", actual: 10, max: 10 }],
+    },
+    {
+      name: "スコアのクエリに集中増幅効果が指定されている時、集中の効果をその倍率分増加する",
+      args: [
+        {
+          modifiers: [{ kind: "focus", amount: 1 }],
+        } as Idol,
+        undefined,
+        { value: 1, focusMultiplier: 2.0 },
+      ],
+      expected: [{ kind: "score", actual: 3, max: 3 }],
+    },
+    {
+      name: "スコアのクエリに回数が指定されている時、状態修正や集中増幅効果などの影響を反映した結果を回数分の結果で返す",
+      args: [
+        {
+          modifiers: [{ kind: "focus", amount: 1 }],
+        } as Idol,
+        undefined,
+        { value: 1, focusMultiplier: 2.0, times: 2 },
+      ],
+      expected: [
+        { kind: "score", actual: 3, max: 3 },
+        { kind: "score", actual: 3, max: 3 },
+      ],
+    },
+    {
+      name: "スコア増加値の上限が設定されている時、actualはその値を超えない",
+      args: [
+        {
+          modifiers: [] as Idol["modifiers"],
+        } as Idol,
+        6,
+        { value: 10 },
+      ],
+      expected: [{ kind: "score", actual: 6, max: 10 }],
+    },
+    {
+      name: "スコア増加値の上限が設定されている中で複数回スコア増加の時、スコア増加の累計と上限を比較する",
+      args: [
+        {
+          modifiers: [] as Idol["modifiers"],
+        } as Idol,
+        16,
+        { value: 10, times: 3 },
+      ],
+      expected: [
+        { kind: "score", actual: 10, max: 10 },
+        { kind: "score", actual: 6, max: 10 },
+        { kind: "score", actual: 0, max: 10 },
+      ],
+    },
+    {
+      name: "集中:4,好調:6,絶好調:有,ハイタッチ{未強化,+17,集中*1.5} は `(17 + 4 * 1.5) * (1.5 + 0.6) = 48.30` で 49 を返す",
+      args: [
+        {
+          modifiers: [
+            { kind: "focus", amount: 4 },
+            { kind: "goodCondition", duration: 6 },
+            { kind: "excellentCondition", duration: 1 },
+          ] as Idol["modifiers"],
+        } as Idol,
+        undefined,
+        { value: 17, focusMultiplier: 1.5 },
+      ],
+      expected: [{ kind: "score", actual: 49, max: 49 }],
+    },
+  ];
+  test.each(testCases)("$name", ({ args, expected }) => {
+    expect(calculatePerformingScoreEffect(...args)).toStrictEqual(expected);
+  });
+});
 describe("useCard", () => {
   const createLessonForTest = (
     overwrites: Partial<Parameters<typeof createIdolInProduction>[0]> = {},
@@ -311,6 +462,7 @@ describe("useCard", () => {
       ...overwrites,
     });
     return createLesson({
+      clearScoreThresholds: undefined,
       getRandom: Math.random,
       idolInProduction,
       lastTurnNumber: 6,

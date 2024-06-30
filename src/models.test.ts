@@ -96,6 +96,7 @@ describe("createLessonGamePlay", () => {
     expect(lessonGamePlay).toStrictEqual({
       getRandom: expect.any(Function),
       initialLesson: {
+        clearScoreThresholds: undefined,
         idol: {
           original: idolInProduction,
           life: 32,

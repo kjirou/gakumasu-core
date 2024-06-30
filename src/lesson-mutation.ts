@@ -300,13 +300,69 @@ const calculateCostConsumption = (
   }
 };
 
+/**
+ * スコア/パラメータ増加効果の計算をする
+ *
+ * - 本家 v1.2.0 での例
+ *   - 集中:0, 好調:1, 絶好調:無, アピールの基本（未強化, +9） => 14
+ *     - `9 * 1.5 = 13.5`
+ *   - 集中:4, 好調:6, 絶好調:有, ハイタッチ{未強化, +17, 集中*1.5} => 49
+ *     - `(17 + 4 * 1.5) * (1.5 + 0.6) = 48.30`
+ *   - 集中:4, 好調:6, 絶好調:有, ハイタッチ{強化済, +23, 集中*2.0} => 66
+ *     - `(23 + 4 * 2.0) * (1.5 + 0.6) = 65.10`
+ *   - 集中:4, 好調:6, 絶好調:有, 初星水（+10） => 30
+ *     - `(10 + 4) * (1.5 + 0.6) = 29.40`
+ * - TODO: 集中増幅効果が端数の時、そこで端数処理が入るのか、小数のまま計算されるのか。とりあえず小数のまま計算されると仮定している。
+ *
+ * @param remainingIncrementableScore 残りの増加可能スコア。undefined の場合は、無限大として扱う。
+ */
+export const calculatePerformingScoreEffect = (
+  idol: Idol,
+  remainingIncrementableScore: number | undefined,
+  query: NonNullable<Extract<Effect, { kind: "perform" }>["score"]>,
+): Array<Extract<LessonUpdateQueryDiff, { kind: "score" }>> => {
+  const goodCondition = idol.modifiers.find((e) => e.kind === "goodCondition");
+  const goodConditionDuration =
+    goodCondition && "duration" in goodCondition ? goodCondition.duration : 0;
+  const focus = idol.modifiers.find((e) => e.kind === "focus");
+  const focusAmount = focus && "amount" in focus ? focus.amount : 0;
+  const hasExcellentCondition =
+    idol.modifiers.find((e) => e.kind === "excellentCondition") !== undefined;
+  const focusMultiplier =
+    query.focusMultiplier !== undefined ? query.focusMultiplier : 1;
+  const score = Math.ceil(
+    (query.value + focusAmount * focusMultiplier) *
+      ((goodConditionDuration > 0 ? 1.5 : 1.0) +
+        (goodConditionDuration > 0 && hasExcellentCondition
+          ? goodConditionDuration * 0.1
+          : 0.0)),
+  );
+  const diffs: Array<Extract<LessonUpdateQueryDiff, { kind: "score" }>> = [];
+  let remainingIncrementableScore_ = remainingIncrementableScore;
+  for (let i = 0; i < (query.times !== undefined ? query.times : 1); i++) {
+    diffs.push({
+      kind: "score",
+      actual:
+        remainingIncrementableScore_ !== undefined
+          ? Math.min(score, remainingIncrementableScore_)
+          : score,
+      max: score,
+    });
+    if (remainingIncrementableScore_ !== undefined) {
+      remainingIncrementableScore_ -= score;
+      remainingIncrementableScore_ = Math.max(remainingIncrementableScore_, 0);
+    }
+  }
+  return diffs;
+};
+
 const computeEffects = (
   lesson: Lesson,
   effects: Effect[],
   getRandom: GetRandom,
   beforeVitality: Idol["vitality"],
 ): LessonUpdateQueryDiff[] => {
-  const diffs: LessonUpdateQueryDiff[] = [];
+  let diffs: LessonUpdateQueryDiff[] = [];
   for (const effect of effects) {
     // TODO: 個別の効果発動条件の判定
 
@@ -404,6 +460,21 @@ const computeEffects = (
           kind: "modifier",
           modifier: effect.modifier,
         });
+        break;
+      }
+      case "perform": {
+        if (effect.score) {
+          diffs = [
+            ...diffs,
+            ...calculatePerformingScoreEffect(
+              lesson.idol,
+              undefined,
+              effect.score,
+            ),
+          ];
+        }
+        if (effect.vitality) {
+        }
         break;
       }
       // default:

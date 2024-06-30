@@ -105,6 +105,7 @@ export const prepareCardsForLesson = (
 };
 
 export const createLesson = (params: {
+  clearScoreThresholds: Lesson["clearScoreThresholds"];
   getRandom: GetRandom;
   idolInProduction: IdolInProduction;
   lastTurnNumber: Lesson["lastTurnNumber"];
@@ -112,6 +113,7 @@ export const createLesson = (params: {
   const cards = prepareCardsForLesson(params.idolInProduction.deck);
   return {
     cards,
+    clearScoreThresholds: params.clearScoreThresholds,
     deck: shuffleArray(
       cards.map((card) => card.id),
       params.getRandom,
@@ -129,15 +131,45 @@ export const createLesson = (params: {
   };
 };
 
+export const calculateClearScoreProgress = (
+  score: Lesson["score"],
+  clearScoreThresholds: NonNullable<Lesson["clearScoreThresholds"]>,
+): {
+  clearScoreProgressPercentage: number;
+  necessaryClearScore: number;
+  necessaryPerfectScore: number | undefined;
+  remainingClearScore: number;
+  remainingPerfectScore: number | undefined;
+} => {
+  return {
+    necessaryClearScore: clearScoreThresholds.clear,
+    necessaryPerfectScore: clearScoreThresholds.perfect,
+    remainingClearScore: Math.max(0, clearScoreThresholds.clear - score),
+    remainingPerfectScore:
+      clearScoreThresholds.perfect !== undefined
+        ? Math.max(0, clearScoreThresholds.perfect - score)
+        : undefined,
+    clearScoreProgressPercentage: Math.floor(
+      (score * 100) / clearScoreThresholds.clear,
+    ),
+  };
+};
+
 export const createLessonGamePlay = (params: {
+  clearScoreThresholds?: Lesson["clearScoreThresholds"];
   idolInProduction: IdolInProduction;
   getRandom?: GetRandom;
   lastTurnNumber: Lesson["lastTurnNumber"];
 }): LessonGamePlay => {
+  const clearScoreThresholds =
+    params.clearScoreThresholds !== undefined
+      ? params.clearScoreThresholds
+      : undefined;
   const getRandom = params.getRandom ? params.getRandom : Math.random;
   return {
     getRandom,
     initialLesson: createLesson({
+      clearScoreThresholds,
       getRandom,
       idolInProduction: params.idolInProduction,
       lastTurnNumber: params.lastTurnNumber,
