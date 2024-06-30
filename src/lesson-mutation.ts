@@ -502,6 +502,24 @@ const computeEffects = (
         });
         break;
       }
+      case "multiplyModifier": {
+        const modifier = lesson.idol.modifiers.find(
+          (e) => e.kind === effect.modifierKind,
+        );
+        // 現在は、好印象に対してしか存在しない効果なので、そのこと前提で実装している
+        if (modifier?.kind === "positiveImpression") {
+          diffs.push({
+            kind: "modifier",
+            modifier: {
+              kind: "positiveImpression",
+              amount:
+                Math.ceil(modifier.amount * effect.multiplier) -
+                modifier.amount,
+            },
+          });
+        }
+        break;
+      }
       case "perform": {
         if (effect.score) {
           let remainingIncrementableScore: number | undefined;

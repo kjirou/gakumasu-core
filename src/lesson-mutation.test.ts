@@ -1,5 +1,6 @@
 import {
   Card,
+  CardDefinition,
   CardInProduction,
   Idol,
   IdolDefinition,
@@ -947,6 +948,51 @@ describe("useCard", () => {
         expect(update).toStrictEqual({
           kind: "remainingTurns",
           amount: 1,
+          reason: expect.any(Object),
+        });
+      });
+    });
+    describe("multiplyModifier", () => {
+      test("it works", () => {
+        // この効果を持つスキルカードがないので、モックを作る
+        const cardDefinitionMock = {
+          base: {
+            cost: { kind: "normal", value: 0 },
+            effects: [
+              {
+                kind: "multiplyModifier",
+                modifierKind: "positiveImpression",
+                multiplier: 1.5,
+              },
+            ],
+          },
+        } as CardDefinition;
+        const lesson = createLessonForTest({
+          cards: [
+            {
+              id: "a",
+              definition: cardDefinitionMock,
+              enabled: true,
+              enhanced: false,
+            },
+          ],
+        });
+        lesson.hand = ["a"];
+        lesson.idol.modifiers = [
+          { kind: "focus", amount: 20 },
+          { kind: "positiveImpression", amount: 10 },
+        ];
+        const { updates } = useCard(lesson, 1, {
+          selectedCardInHandIndex: 0,
+          getRandom: () => 0,
+        });
+        const update = updates.find((e) => e.kind === "modifier") as any;
+        expect(update).toStrictEqual({
+          kind: "modifier",
+          modifier: {
+            kind: "positiveImpression",
+            amount: 5,
+          },
           reason: expect.any(Object),
         });
       });
