@@ -10,6 +10,7 @@ import type {
   LessonUpdateQueryDiff,
   LessonUpdateQueryReason,
   Modifier,
+  VitalityUpdateQuery,
 } from "./types";
 import {
   calculateClearScoreProgress,
@@ -360,6 +361,33 @@ export const calculatePerformingScoreEffect = (
   return diffs;
 };
 
+export const calculatePerformingVitalityEffect = (
+  idol: Idol,
+  query: VitalityUpdateQuery,
+): Extract<LessonUpdateQueryDiff, { kind: "vitality" }> => {
+  if (query.fixedValue === true) {
+    return {
+      kind: "vitality",
+      actual: query.value,
+      max: query.value,
+    };
+  }
+  const motivation = idol.modifiers.find((e) => e.kind === "motivation");
+  const motivationAmount =
+    motivation && "amount" in motivation ? motivation.amount : 0;
+  const value =
+    query.value +
+    motivationAmount +
+    (query.boostPerCardUsed !== undefined
+      ? idol.totalCardUsageCount * query.boostPerCardUsed
+      : 0);
+  return {
+    kind: "vitality",
+    actual: value,
+    max: value,
+  };
+};
+
 const computeEffects = (
   lesson: Lesson,
   effects: Effect[],
@@ -489,6 +517,10 @@ const computeEffects = (
           ];
         }
         if (effect.vitality) {
+          diffs = [
+            ...diffs,
+            calculatePerformingVitalityEffect(lesson.idol, effect.vitality),
+          ];
         }
         break;
       }

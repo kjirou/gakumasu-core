@@ -10,6 +10,7 @@ import { cards, getCardDataById } from "./data/card";
 import {
   addCardsToHandOrDiscardPile,
   calculatePerformingScoreEffect,
+  calculatePerformingVitalityEffect,
   createCardPlacementDiff,
   drawCardsFromDeck,
   drawCardsOnLessonStart,
@@ -21,7 +22,6 @@ import {
   prepareCardsForLesson,
 } from "./models";
 import { createIdGenerator } from "./utils";
-import exp from "constants";
 
 describe("drawCardsFromDeck", () => {
   test("山札がなくならない状態で1枚引いた時、1枚引けて、山札が1枚減る", () => {
@@ -448,6 +448,79 @@ describe("calculatePerformingScoreEffect", () => {
     expect(calculatePerformingScoreEffect(...args)).toStrictEqual(expected);
   });
 });
+describe("calculatePerformingVitalityEffect", () => {
+  const testCases: {
+    args: Parameters<typeof calculatePerformingVitalityEffect>;
+    expected: ReturnType<typeof calculatePerformingVitalityEffect>;
+    name: string;
+  }[] = [
+    {
+      name: "通常の元気増加",
+      args: [
+        {
+          vitality: 0,
+          modifiers: [] as Idol["modifiers"],
+        } as Idol,
+        { value: 1 },
+      ],
+      expected: {
+        kind: "vitality",
+        actual: 1,
+        max: 1,
+      },
+    },
+    {
+      name: "やる気の数値を元気増加時に加算する",
+      args: [
+        {
+          vitality: 0,
+          modifiers: [{ kind: "motivation", amount: 10 }] as Idol["modifiers"],
+        } as Idol,
+        { value: 1 },
+      ],
+      expected: {
+        kind: "vitality",
+        actual: 11,
+        max: 11,
+      },
+    },
+    {
+      name: "「レッスン中に使用したスキルカード1枚ごとに、元気増加量+n」の効果",
+      args: [
+        {
+          vitality: 0,
+          modifiers: [] as Idol["modifiers"],
+          totalCardUsageCount: 3,
+        } as Idol,
+        { value: 1, boostPerCardUsed: 2 },
+      ],
+      expected: {
+        kind: "vitality",
+        actual: 7,
+        max: 7,
+      },
+    },
+    {
+      name: "固定元気の時、他のいかなる修正も無視する",
+      args: [
+        {
+          vitality: 0,
+          modifiers: [{ kind: "motivation", amount: 10 }] as Idol["modifiers"],
+          totalCardUsageCount: 3,
+        } as Idol,
+        { value: 1, boostPerCardUsed: 2, fixedValue: true },
+      ],
+      expected: {
+        kind: "vitality",
+        actual: 1,
+        max: 1,
+      },
+    },
+  ];
+  test.each(testCases)("$name", ({ args, expected }) => {
+    expect(calculatePerformingVitalityEffect(...args)).toStrictEqual(expected);
+  });
+});
 describe("useCard", () => {
   const createLessonForTest = (
     overwrites: Partial<Parameters<typeof createIdolInProduction>[0]> = {},
@@ -853,7 +926,7 @@ describe("useCard", () => {
         });
       });
     });
-    // calculatePerformingScoreEffect のテストで検証できる内容はそちらで行う
+    // calculatePerformingScoreEffect と calculatePerformingVitalityEffect のテストで検証できる内容はそちらで行う
     describe("perform", () => {
       test("レッスンにスコア上限がある時、スコアはそれを超えない増加値を返す", () => {
         const lesson = createLessonForTest({
@@ -915,7 +988,7 @@ describe("useCard", () => {
           },
         ]);
       });
-      test("複数の更新を生成するスコア増加を返せる", () => {
+      test("複数の更新を生成するスコア増加を返す", () => {
         const lesson = createLessonForTest({
           cards: [
             {
@@ -943,6 +1016,40 @@ describe("useCard", () => {
             kind: "score",
             actual: 8,
             max: 8,
+            reason: expect.any(Object),
+          },
+        ]);
+      });
+      test("スコアと元気の更新を同時に返す", () => {
+        const lesson = createLessonForTest({
+          cards: [
+            {
+              id: "a",
+              definition: getCardDataById("pozunokihon"),
+              enabled: true,
+              enhanced: false,
+            },
+          ],
+        });
+        lesson.hand = ["a"];
+        const { updates } = useCard(lesson, 1, {
+          selectedCardInHandIndex: 0,
+          getRandom: () => 0,
+        });
+        const filtered = updates.filter(
+          (e) => e.kind === "score" || e.kind === "vitality",
+        ) as any[];
+        expect(filtered).toStrictEqual([
+          {
+            kind: "score",
+            actual: 2,
+            max: 2,
+            reason: expect.any(Object),
+          },
+          {
+            kind: "vitality",
+            actual: 2,
+            max: 2,
             reason: expect.any(Object),
           },
         ]);

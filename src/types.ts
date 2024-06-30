@@ -349,7 +349,7 @@ export type Effect = (
        * - この効果は、状態修正ではなさそう
        *   - 左アイコンリストにもそれをタップしたリストにもない
        */
-      kind: "increaseTurns";
+      kind: "increaseRemainingTurns";
       amount: number;
     }
   | {

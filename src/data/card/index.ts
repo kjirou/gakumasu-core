@@ -3837,7 +3837,7 @@ export const cards: CardDefinition[] = [
     base: {
       cost: { kind: "goodCondition", value: 2 },
       effects: [
-        { kind: "increaseTurns", amount: 1 },
+        { kind: "increaseRemainingTurns", amount: 1 },
         {
           kind: "getModifier",
           modifier: {
@@ -3852,7 +3852,7 @@ export const cards: CardDefinition[] = [
     enhanced: {
       cost: { kind: "goodCondition", value: 1 },
       effects: [
-        { kind: "increaseTurns", amount: 1 },
+        { kind: "increaseRemainingTurns", amount: 1 },
         {
           kind: "getModifier",
           modifier: {

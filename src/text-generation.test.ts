@@ -59,9 +59,9 @@ describe("generateEffectText", () => {
       name: "generateCard",
     },
     {
-      args: [{ kind: "increaseTurns", amount: 1 }],
+      args: [{ kind: "increaseRemainingTurns", amount: 1 }],
       expected: "{{ターン追加}}+1",
-      name: "increaseTurns",
+      name: "increaseRemainingTurns",
     },
     {
       args: [
