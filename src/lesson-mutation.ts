@@ -400,6 +400,10 @@ const computeEffects = (
         );
         break;
       case "getModifier": {
+        diffs.push({
+          kind: "modifier",
+          modifier: effect.modifier,
+        });
         break;
       }
       // default:

@@ -673,5 +673,33 @@ describe("useCard", () => {
         expect(update.removedCardPile).toBeUndefined();
       });
     });
+    describe("getModifier", () => {
+      test("it works", () => {
+        const lesson = createLessonForTest({
+          cards: [
+            {
+              id: "a",
+              definition: getCardDataById("furumainokihon"),
+              enabled: true,
+              enhanced: false,
+            },
+          ],
+        });
+        lesson.hand = ["a"];
+        const { updates } = useCard(lesson, 1, {
+          selectedCardInHandIndex: 0,
+          getRandom: () => 0,
+        });
+        const update = updates.find((e) => e.kind === "modifier") as any;
+        expect(update).toStrictEqual({
+          kind: "modifier",
+          modifier: {
+            kind: "goodCondition",
+            duration: 2,
+          },
+          reason: expect.any(Object),
+        });
+      });
+    });
   });
 });
