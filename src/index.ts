@@ -150,6 +150,7 @@ export const selectCard = (
   ) {
     const result = useCard(lesson, historyResultIndex, {
       getRandom: lessonGamePlay.getRandom,
+      idGenerator: lessonGamePlay.idGenerator,
       selectedCardInHandIndex: selectedCardInHandIndex,
     });
     updatesList = [...updatesList, result.updates];

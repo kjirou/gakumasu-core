@@ -1108,6 +1108,11 @@ export type LessonUpdateQueryDiff =
       removedCardPile?: Lesson["removedCardPile"];
     }
   | {
+      /** カードセットの上書き */
+      kind: "cards";
+      cards: Card[];
+    }
+  | {
       kind: "life";
       /** アイドルの状態へ実際に影響を与える数値。例えば、残り体力1の時に、トラブルの体力減少で3減らされた時は1になる。 */
       actual: number;
@@ -1168,6 +1173,7 @@ export type LessonUpdateQuery = LessonUpdateQueryDiff & {
  */
 export type LessonGamePlay = {
   getRandom: GetRandom;
+  idGenerator: IdGenerator;
   /**
    * 開始時のレッスン
    *

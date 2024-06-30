@@ -12,6 +12,12 @@ export const getCardDataById = (id: CardDefinition["id"]): CardDefinition => {
   return card;
 };
 
+/** 「ランダムな強化済みスキルカード（SSR）を、手札に生成」用の候補を返す */
+export const filterGeneratableSsrCardsData = () =>
+  cards.filter(
+    (card) => card.cardProviderKind === "others" && card.rarity === "ssr",
+  );
+
 /**
  * スキルカードデータの定義
  *

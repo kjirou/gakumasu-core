@@ -149,6 +149,7 @@ describe("createLessonGamePlay", () => {
     });
     expect(lessonGamePlay).toStrictEqual({
       getRandom: expect.any(Function),
+      idGenerator: expect.any(Function),
       initialLesson: {
         clearScoreThresholds: undefined,
         idol: {
@@ -277,6 +278,32 @@ describe("patchUpdates", () => {
       expect(lesson.discardPile).toStrictEqual(["2"]);
       expect(lesson.hand).toStrictEqual(["33", "333"]);
       expect(lesson.removedCardPile).toStrictEqual(["44", "444"]);
+    });
+  });
+  describe("cards", () => {
+    test("it works", () => {
+      const lessonMock = {
+        cards: [
+          {
+            id: "1",
+          },
+          {
+            id: "2",
+          },
+        ],
+      } as Lesson;
+      const lesson = patchUpdates(lessonMock, [
+        {
+          kind: "cards",
+          cards: [],
+          reason: {
+            kind: "lessonStartTrigger",
+            historyTurnNumber: 1,
+            historyResultIndex: 1,
+          },
+        },
+      ]);
+      expect(lesson.cards).toStrictEqual([]);
     });
   });
   describe("modifier", () => {

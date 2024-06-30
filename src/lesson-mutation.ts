@@ -2,8 +2,10 @@ import type {
   ActionCost,
   Card,
   CardContentDefinition,
+  CardInProduction,
   Effect,
   GetRandom,
+  IdGenerator,
   Idol,
   Lesson,
   LessonUpdateQuery,
@@ -12,10 +14,12 @@ import type {
   Modifier,
   VitalityUpdateQuery,
 } from "./types";
+import { filterGeneratableSsrCardsData } from "./data/card";
 import {
   calculateClearScoreProgress,
   maxHandSize,
   patchUpdates,
+  prepareCardsForLesson,
 } from "./models";
 import { shuffleArray } from "./utils";
 
@@ -392,6 +396,7 @@ const computeEffects = (
   lesson: Lesson,
   effects: Effect[],
   getRandom: GetRandom,
+  idGenerator: IdGenerator,
   beforeVitality: Idol["vitality"],
 ): LessonUpdateQueryDiff[] => {
   let diffs: LessonUpdateQueryDiff[] = [];
@@ -488,6 +493,33 @@ const computeEffects = (
         );
         break;
       }
+      case "generateCard": {
+        const candidates = filterGeneratableSsrCardsData();
+        const cardDefinition = candidates[getRandom() * candidates.length];
+        const cardInProduction: CardInProduction = {
+          id: idGenerator(),
+          definition: cardDefinition,
+          enabled: true,
+          enhanced: true,
+        };
+        const card: Card = prepareCardsForLesson([cardInProduction])[0];
+        const { hand, discardPile } = addCardsToHandOrDiscardPile(
+          [card.id],
+          lesson.hand,
+          lesson.discardPile,
+        );
+        diffs.push({
+          kind: "cards",
+          cards: [...lesson.cards, card],
+        });
+        diffs.push(
+          createCardPlacementDiff(
+            { hand: lesson.hand, discardPile: lesson.discardPile },
+            { hand, discardPile },
+          ),
+        );
+        break;
+      }
       case "getModifier": {
         diffs.push({
           kind: "modifier",
@@ -562,6 +594,7 @@ export const useCard = (
   historyResultIndex: LessonUpdateQuery["reason"]["historyResultIndex"],
   params: {
     getRandom: GetRandom;
+    idGenerator: IdGenerator;
     selectedCardInHandIndex: number;
   },
 ): LessonMutationResult => {
@@ -634,6 +667,7 @@ export const useCard = (
     newLesson,
     cardContent.effects,
     params.getRandom,
+    params.idGenerator,
     beforeVitality,
   ).map((diff) => ({
     ...diff,

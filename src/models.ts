@@ -35,7 +35,7 @@ import {
   LessonUpdateQueryDiff,
   Modifier,
 } from "./types";
-import { shuffleArray } from "./utils";
+import { createIdGenerator, shuffleArray } from "./utils";
 
 /** ターン開始時の手札数 */
 export const handSizeOnLessonStart = 3;
@@ -163,6 +163,7 @@ export const createLessonGamePlay = (params: {
   clearScoreThresholds?: Lesson["clearScoreThresholds"];
   idolInProduction: IdolInProduction;
   getRandom?: GetRandom;
+  idGenerator?: IdGenerator;
   lastTurnNumber: Lesson["lastTurnNumber"];
 }): LessonGamePlay => {
   const clearScoreThresholds =
@@ -170,8 +171,12 @@ export const createLessonGamePlay = (params: {
       ? params.clearScoreThresholds
       : undefined;
   const getRandom = params.getRandom ? params.getRandom : Math.random;
+  const idGenerator = params.idGenerator
+    ? params.idGenerator
+    : createIdGenerator();
   return {
     getRandom,
+    idGenerator,
     initialLesson: createLesson({
       clearScoreThresholds,
       getRandom,
@@ -219,6 +224,13 @@ export const patchUpdates = (
           ...(update.removedCardPile
             ? { removedCardPile: update.removedCardPile }
             : {}),
+        };
+        break;
+      }
+      case "cards": {
+        newLesson = {
+          ...newLesson,
+          cards: update.cards,
         };
         break;
       }
