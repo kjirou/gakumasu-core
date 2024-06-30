@@ -1183,5 +1183,89 @@ describe("useCard", () => {
         ]);
       });
     });
+    describe("performLeveragingModifier", () => {
+      test("motivation", () => {
+        const lesson = createLessonForTest({
+          cards: [
+            {
+              id: "a",
+              definition: getCardDataById("kaika"),
+              enabled: true,
+              enhanced: false,
+            },
+          ],
+        });
+        lesson.hand = ["a"];
+        lesson.idol.modifiers = [{ kind: "motivation", amount: 10 }];
+        const { updates } = useCard(lesson, 1, {
+          selectedCardInHandIndex: 0,
+          getRandom: () => 0,
+          idGenerator: createIdGenerator(),
+        });
+        const update = updates.find((e) => e.kind === "score") as any;
+        expect(update).toStrictEqual({
+          kind: "score",
+          actual: 20,
+          max: 20,
+          reason: expect.any(Object),
+        });
+      });
+      test("positiveImpression", () => {
+        const lesson = createLessonForTest({
+          cards: [
+            {
+              id: "a",
+              definition: getCardDataById("200sumairu"),
+              enabled: true,
+              enhanced: false,
+            },
+          ],
+        });
+        lesson.hand = ["a"];
+        lesson.idol.modifiers = [{ kind: "positiveImpression", amount: 10 }];
+        const { updates } = useCard(lesson, 1, {
+          selectedCardInHandIndex: 0,
+          getRandom: () => 0,
+          idGenerator: createIdGenerator(),
+        });
+        const update = updates.find((e) => e.kind === "score") as any;
+        expect(update).toStrictEqual({
+          kind: "score",
+          actual: 10,
+          max: 10,
+          reason: expect.any(Object),
+        });
+      });
+      test("スコア上限の設定がある時は、actualはその値を超えない", () => {
+        const lesson = createLessonForTest({
+          cards: [
+            {
+              id: "a",
+              definition: getCardDataById("kaika"),
+              enabled: true,
+              enhanced: false,
+            },
+          ],
+        });
+        lesson.hand = ["a"];
+        lesson.clearScoreThresholds = {
+          clear: 1,
+          perfect: 6,
+        };
+        lesson.idol.modifiers = [{ kind: "motivation", amount: 5 }];
+        const { updates } = useCard(lesson, 1, {
+          selectedCardInHandIndex: 0,
+          getRandom: () => 0,
+          idGenerator: createIdGenerator(),
+        });
+        const update = updates.find((e) => e.kind === "score") as any;
+        expect(update).toStrictEqual({
+          kind: "score",
+          actual: 6,
+          max: 10,
+          reason: expect.any(Object),
+        });
+      });
+    });
   });
 });

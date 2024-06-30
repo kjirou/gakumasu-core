@@ -397,8 +397,18 @@ const computeEffects = (
   effects: Effect[],
   getRandom: GetRandom,
   idGenerator: IdGenerator,
-  beforeVitality: Idol["vitality"],
 ): LessonUpdateQueryDiff[] => {
+  const beforeVitality = lesson.idol.vitality;
+  let remainingIncrementableScore: number | undefined;
+  if (lesson.clearScoreThresholds !== undefined) {
+    const progress = calculateClearScoreProgress(
+      lesson.score,
+      lesson.clearScoreThresholds,
+    );
+    if (progress.remainingPerfectScore !== undefined) {
+      remainingIncrementableScore = progress.remainingPerfectScore;
+    }
+  }
   let diffs: LessonUpdateQueryDiff[] = [];
   for (const effect of effects) {
     // TODO: 個別の効果発動条件の判定
@@ -554,16 +564,6 @@ const computeEffects = (
       }
       case "perform": {
         if (effect.score) {
-          let remainingIncrementableScore: number | undefined;
-          if (lesson.clearScoreThresholds !== undefined) {
-            const progress = calculateClearScoreProgress(
-              lesson.score,
-              lesson.clearScoreThresholds,
-            );
-            if (progress.remainingPerfectScore !== undefined) {
-              remainingIncrementableScore = progress.remainingPerfectScore;
-            }
-          }
           diffs = [
             ...diffs,
             ...calculatePerformingScoreEffect(
@@ -579,6 +579,45 @@ const computeEffects = (
             calculatePerformingVitalityEffect(lesson.idol, effect.vitality),
           ];
         }
+        break;
+      }
+      case "performLeveragingModifier": {
+        let score = 0;
+        switch (effect.modifierKind) {
+          case "motivation": {
+            const motivation = lesson.idol.modifiers.find(
+              (e) => e.kind === "motivation",
+            );
+            const motivationAmount =
+              motivation && "amount" in motivation ? motivation.amount : 0;
+            score = Math.ceil((motivationAmount * effect.percentage) / 100);
+            break;
+          }
+          case "positiveImpression": {
+            const positiveImpression = lesson.idol.modifiers.find(
+              (e) => e.kind === "positiveImpression",
+            );
+            const positiveImpressionAmount =
+              positiveImpression && "amount" in positiveImpression
+                ? positiveImpression.amount
+                : 0;
+            score = Math.ceil(
+              (positiveImpressionAmount * effect.percentage) / 100,
+            );
+            break;
+          }
+          default:
+            const unreachable: never = effect;
+            throw new Error(`Unreachable statement`);
+        }
+        diffs.push({
+          kind: "score",
+          actual:
+            remainingIncrementableScore !== undefined
+              ? Math.min(score, remainingIncrementableScore)
+              : score,
+          max: score,
+        });
         break;
       }
       // default:
@@ -609,7 +648,6 @@ export const useCard = (
     throw new Error(`Card not found in cards: cardId=${cardId}`);
   }
   const cardContent = getCardContentDefinition(card);
-  const beforeVitality = lesson.idol.vitality;
   let newLesson = lesson;
   let nextHistoryResultIndex = historyResultIndex;
 
@@ -668,7 +706,6 @@ export const useCard = (
     cardContent.effects,
     params.getRandom,
     params.idGenerator,
-    beforeVitality,
   ).map((diff) => ({
     ...diff,
     reason: {
