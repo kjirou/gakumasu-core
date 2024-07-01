@@ -429,7 +429,7 @@ describe("validateCostComsumution", () => {
         } as Idol,
         { kind: "positiveImpression", value: 4 },
       ],
-      expected: true,
+      expected: false,
     },
   ];
   test.each(testCases)("$name", ({ args, expected }) => {
