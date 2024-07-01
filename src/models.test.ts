@@ -3,6 +3,7 @@ import { getCardDataById } from "./data/card";
 import { getIdolDataById } from "./data/idol";
 import { getProducerItemDataById } from "./data/producer-item";
 import {
+  calculateActualActionCost,
   calculateClearScoreProgress,
   createIdolInProduction,
   createLessonGamePlay,
@@ -173,6 +174,107 @@ describe("createLessonGamePlay", () => {
       updates: [],
     });
   });
+});
+describe("calculateActualActionCost", () => {
+  const testCases: Array<{
+    args: Parameters<typeof calculateActualActionCost>;
+    expected: ReturnType<typeof calculateActualActionCost>;
+  }> = [
+    {
+      args: [{ kind: "normal", value: 1 }, []],
+      expected: { kind: "normal", value: 1 },
+    },
+    {
+      args: [
+        { kind: "normal", value: 1 },
+        [{ kind: "lifeConsumptionReduction", value: 2 }],
+      ],
+      expected: { kind: "normal", value: 0 },
+    },
+    {
+      args: [
+        { kind: "normal", value: 2 },
+        [{ kind: "halfLifeConsumption", duration: 1 }],
+      ],
+      expected: { kind: "normal", value: 1 },
+    },
+    {
+      args: [
+        { kind: "normal", value: 3 },
+        [{ kind: "halfLifeConsumption", duration: 1 }],
+      ],
+      expected: { kind: "normal", value: 2 },
+    },
+    {
+      args: [
+        { kind: "normal", value: 1 },
+        [{ kind: "doubleLifeConsumption", duration: 1 }],
+      ],
+      expected: { kind: "normal", value: 2 },
+    },
+    {
+      args: [
+        { kind: "normal", value: 2 },
+        [
+          { kind: "halfLifeConsumption", duration: 1 },
+          { kind: "doubleLifeConsumption", duration: 1 },
+        ],
+      ],
+      expected: { kind: "normal", value: 2 },
+    },
+    {
+      args: [
+        { kind: "normal", value: 2 },
+        [
+          { kind: "lifeConsumptionReduction", value: 1 },
+          { kind: "halfLifeConsumption", duration: 1 },
+          { kind: "doubleLifeConsumption", duration: 1 },
+        ],
+      ],
+      expected: { kind: "normal", value: 1 },
+    },
+    {
+      args: [
+        { kind: "life", value: 1 },
+        [{ kind: "lifeConsumptionReduction", value: 1 }],
+      ],
+      expected: { kind: "life", value: 0 },
+    },
+    {
+      args: [
+        { kind: "focus", value: 1 },
+        [{ kind: "lifeConsumptionReduction", value: 1 }],
+      ],
+      expected: { kind: "focus", value: 1 },
+    },
+    {
+      args: [
+        { kind: "goodCondition", value: 1 },
+        [{ kind: "lifeConsumptionReduction", value: 1 }],
+      ],
+      expected: { kind: "goodCondition", value: 1 },
+    },
+    {
+      args: [
+        { kind: "motivation", value: 1 },
+        [{ kind: "lifeConsumptionReduction", value: 1 }],
+      ],
+      expected: { kind: "motivation", value: 1 },
+    },
+    {
+      args: [
+        { kind: "positiveImpression", value: 1 },
+        [{ kind: "lifeConsumptionReduction", value: 1 }],
+      ],
+      expected: { kind: "positiveImpression", value: 1 },
+    },
+  ];
+  test.each(testCases)(
+    "$args.0, [$args.1.0, $args.1.1, $args.1.2] => $expected",
+    ({ args, expected }) => {
+      expect(calculateActualActionCost(...args)).toStrictEqual(expected);
+    },
+  );
 });
 describe("patchUpdates", () => {
   describe("cardEnhancement", () => {

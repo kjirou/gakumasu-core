@@ -16,6 +16,7 @@ import type {
 } from "./types";
 import { filterGeneratableSsrCardsData } from "./data/card";
 import {
+  calculateActualActionCost,
   calculateClearScoreProgress,
   maxHandSize,
   patchUpdates,
@@ -240,10 +241,9 @@ type CostConsumptionUpdateQueryDiff = Extract<
  * - 消費分のコストは足りる前提で呼び出す
  */
 const calculateCostConsumption = (
-  lesson: Lesson,
+  idol: Idol,
   cost: ActionCost,
 ): CostConsumptionUpdateQueryDiff[] => {
-  const idol = lesson.idol;
   switch (cost.kind) {
     case "normal": {
       const updates: CostConsumptionUpdateQueryDiff[] = [];
@@ -303,9 +303,10 @@ const calculateCostConsumption = (
         },
       ];
     }
-    default:
+    default: {
       const unreachable: never = cost.kind;
       throw new Error(`Unreachable statement`);
+    }
   }
 };
 
@@ -412,7 +413,8 @@ const computeEffects = (
   for (const effect of effects) {
     // TODO: 個別の効果発動条件の判定
 
-    switch (effect.kind) {
+    const effectKind = effect.kind;
+    switch (effectKind) {
       // 現在は、Pアイテムの「私の「初」の楽譜」にのみ存在し、スキルカードには存在しない効果
       case "drainLife": {
         diffs.push({
@@ -582,7 +584,8 @@ const computeEffects = (
       }
       case "performLeveragingModifier": {
         let score = 0;
-        switch (effect.modifierKind) {
+        const modifierKind = effect.modifierKind;
+        switch (modifierKind) {
           case "motivation": {
             const motivation = lesson.idol.modifiers.find(
               (e) => e.kind === "motivation",
@@ -605,20 +608,19 @@ const computeEffects = (
             );
             break;
           }
-          default:
-            const unreachable: never = effect;
+          default: {
+            const unreachable: never = modifierKind;
             throw new Error(`Unreachable statement`);
+          }
         }
-        if (score > 0) {
-          diffs.push({
-            kind: "score",
-            actual:
-              remainingIncrementableScore !== undefined
-                ? Math.min(score, remainingIncrementableScore)
-                : score,
-            max: score,
-          });
-        }
+        diffs.push({
+          kind: "score",
+          actual:
+            remainingIncrementableScore !== undefined
+              ? Math.min(score, remainingIncrementableScore)
+              : score,
+          max: score,
+        });
         break;
       }
       case "performLeveragingVitality": {
@@ -626,27 +628,23 @@ const computeEffects = (
         if (effect.reductionKind !== undefined) {
           const reductionRate = effect.reductionKind === "zero" ? 1.0 : 0.5;
           const value = Math.floor(lesson.idol.vitality * reductionRate);
-          if (value > 0) {
-            diffs.push({
-              kind: "vitality",
-              actual: -value,
-              max: -value,
-            });
-          }
+          diffs.push({
+            kind: "vitality",
+            actual: -value,
+            max: -value,
+          });
         }
         const score = Math.ceil(
           (lesson.idol.vitality * effect.percentage) / 100,
         );
-        if (score > 0) {
-          diffs.push({
-            kind: "score",
-            actual:
-              remainingIncrementableScore !== undefined
-                ? Math.min(score, remainingIncrementableScore)
-                : score,
-            max: score,
-          });
-        }
+        diffs.push({
+          kind: "score",
+          actual:
+            remainingIncrementableScore !== undefined
+              ? Math.min(score, remainingIncrementableScore)
+              : score,
+          max: score,
+        });
         break;
       }
       case "recoverLife": {
@@ -660,9 +658,10 @@ const computeEffects = (
         });
         break;
       }
-      default:
-        const unreachable: never = effect;
+      default: {
+        const unreachable: never = effectKind;
         throw new Error(`Unreachable statement`);
+      }
     }
   }
   return diffs;
@@ -724,8 +723,8 @@ export const useCard = (
   // コスト消費
   //
   const costConsumptionUpdates: LessonUpdateQuery[] = calculateCostConsumption(
-    newLesson,
-    cardContent.cost,
+    newLesson.idol,
+    calculateActualActionCost(cardContent.cost, newLesson.idol.modifiers),
   ).map((diff) => ({
     ...diff,
     reason: {

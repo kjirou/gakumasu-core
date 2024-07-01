@@ -23,6 +23,7 @@ import { getCharacterDataById } from "./data/character";
 import { getIdolDataById } from "./data/idol";
 import { getProducerItemDataById } from "./data/producer-item";
 import {
+  ActionCost,
   Card,
   CardInProduction,
   GetRandom,
@@ -185,6 +186,47 @@ export const createLessonGamePlay = (params: {
     }),
     updates: [],
   };
+};
+
+/** 「消費体力減少」・「消費体力削減」・「消費体力増加」を反映したコストを返す */
+export const calculateActualActionCost = (
+  cost: ActionCost,
+  modifiers: Modifier[],
+): ActionCost => {
+  switch (cost.kind) {
+    case "focus":
+    case "motivation":
+    case "goodCondition":
+    case "positiveImpression": {
+      return cost;
+    }
+    case "life":
+    case "normal": {
+      const lifeConsumptionReduction = modifiers.find(
+        (e) => e.kind === "lifeConsumptionReduction",
+      );
+      const lifeConsumptionReductionValue =
+        lifeConsumptionReduction !== undefined &&
+        "value" in lifeConsumptionReduction
+          ? lifeConsumptionReduction.value
+          : 0;
+      const halfLifeConsumption =
+        modifiers.find((e) => e.kind === "halfLifeConsumption") !== undefined;
+      const hasDoubleLifeConsumption =
+        modifiers.find((e) => e.kind === "doubleLifeConsumption") !== undefined;
+      const value = Math.max(cost.value - lifeConsumptionReductionValue, 0);
+      let rate = hasDoubleLifeConsumption ? 2 : 1;
+      rate = rate / (halfLifeConsumption ? 2 : 1);
+      return {
+        kind: cost.kind,
+        value: Math.ceil(value * rate),
+      };
+    }
+    default: {
+      const unreachable: never = cost.kind;
+      throw new Error(`Unreachable statement`);
+    }
+  }
 };
 
 /**

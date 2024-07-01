@@ -724,6 +724,31 @@ describe("useCard", () => {
         reason: expect.any(Object),
       });
     });
+    test("状態修正により消費体力が変動", () => {
+      const lesson = createLessonForTest({
+        cards: [
+          {
+            id: "a",
+            definition: getCardDataById("genkinaaisatsu"),
+            enabled: true,
+            enhanced: false,
+          },
+        ],
+      });
+      lesson.hand = ["a"];
+      lesson.idol.modifiers = [{ kind: "lifeConsumptionReduction", value: 1 }];
+      const { updates } = useCard(lesson, 1, {
+        selectedCardInHandIndex: 0,
+        getRandom: () => 0,
+        idGenerator: createIdGenerator(),
+      });
+      expect(updates.find((e) => e.kind === "life")).toStrictEqual({
+        kind: "life",
+        actual: -3,
+        max: -3,
+        reason: expect.any(Object),
+      });
+    });
   });
   describe("効果発動", () => {
     describe("drawCards", () => {
@@ -1266,25 +1291,6 @@ describe("useCard", () => {
           reason: expect.any(Object),
         });
       });
-      test("結果的にスコアが0なら、更新しない", () => {
-        const lesson = createLessonForTest({
-          cards: [
-            {
-              id: "a",
-              definition: getCardDataById("kaika"),
-              enabled: true,
-              enhanced: false,
-            },
-          ],
-        });
-        lesson.hand = ["a"];
-        const { updates } = useCard(lesson, 1, {
-          selectedCardInHandIndex: 0,
-          getRandom: () => 0,
-          idGenerator: createIdGenerator(),
-        });
-        expect(updates.find((e) => e.kind === "score")).toBeUndefined();
-      });
     });
     describe("performLeveragingVitality", () => {
       test("通常", () => {
@@ -1364,26 +1370,6 @@ describe("useCard", () => {
           max: -10,
           reason: expect.any(Object),
         });
-      });
-      test("スコアも消費元気も、どちらも結果的に0なら、更新しない", () => {
-        const lesson = createLessonForTest({
-          cards: [
-            {
-              id: "a",
-              definition: getCardDataById("hatonoaizu"),
-              enabled: true,
-              enhanced: false,
-            },
-          ],
-        });
-        lesson.hand = ["a"];
-        const { updates } = useCard(lesson, 1, {
-          selectedCardInHandIndex: 0,
-          getRandom: () => 0,
-          idGenerator: createIdGenerator(),
-        });
-        expect(updates.find((e) => e.kind === "vitality")).toBeUndefined();
-        expect(updates.find((e) => e.kind === "score")).toBeUndefined();
       });
     });
     describe("recoverLife", () => {
