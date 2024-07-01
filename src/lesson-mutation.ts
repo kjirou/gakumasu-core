@@ -3,6 +3,7 @@ import type {
   Card,
   CardContentDefinition,
   CardInProduction,
+  CardUsageCondition,
   Effect,
   GetRandom,
   IdGenerator,
@@ -219,12 +220,11 @@ export const previewCardUsage = (
 };
 
 /** アイドルがコスト分のリソースを持つかを検証する */
-const validateCostComsumution = (idol: Idol, card: Card): boolean => {
-  const cardContent = getCardContentDefinition(card);
-  const actualCost = calculateActualActionCost(
-    cardContent.cost,
-    idol.modifiers,
-  );
+export const validateCostComsumution = (
+  idol: Idol,
+  cost: ActionCost,
+): boolean => {
+  const actualCost = calculateActualActionCost(cost, idol.modifiers);
   const actualCostKind = actualCost.kind;
   switch (actualCostKind) {
     case "focus": {
@@ -272,13 +272,15 @@ const validateCostComsumution = (idol: Idol, card: Card): boolean => {
 };
 
 /** スキルカードが使用できるかを判定する */
-export const canUseCard = (lesson: Lesson, card: Card): boolean => {
-  const costValidation = validateCostComsumution(lesson.idol, card);
+export const canUseCard = (
+  lesson: Lesson,
+  cost: ActionCost,
+  condition: CardUsageCondition | undefined,
+): boolean => {
+  const costValidation = validateCostComsumution(lesson.idol, cost);
   if (!costValidation) {
     return false;
   }
-  const cardContent = getCardContentDefinition(card);
-  const condition = cardContent.condition;
   if (!condition) {
     return true;
   }
@@ -297,7 +299,7 @@ export const canUseCard = (lesson: Lesson, card: Card): boolean => {
       );
     }
     case "measureValue": {
-      let targetPercentage: number | undefined = 0;
+      let targetPercentage: number | undefined = undefined;
       const valueKind = condition.valueKind;
       switch (valueKind) {
         case "life": {

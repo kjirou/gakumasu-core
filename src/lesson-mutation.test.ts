@@ -12,10 +12,12 @@ import {
   addCardsToHandOrDiscardPile,
   calculatePerformingScoreEffect,
   calculatePerformingVitalityEffect,
+  canUseCard,
   createCardPlacementDiff,
   drawCardsFromDeck,
   drawCardsOnLessonStart,
   useCard,
+  validateCostComsumution,
 } from "./lesson-mutation";
 import {
   createIdolInProduction,
@@ -245,6 +247,542 @@ describe("createCardPlacementDiff", () => {
   ];
   test.each(testCases)("$name", ({ args, expected }) => {
     expect(createCardPlacementDiff(...args)).toStrictEqual(expected);
+  });
+});
+describe("validateCostComsumution", () => {
+  const testCases: Array<{
+    args: Parameters<typeof validateCostComsumution>;
+    expected: ReturnType<typeof validateCostComsumution>;
+    name: string;
+  }> = [
+    {
+      name: "normalコストに対してlifeが足りる時、スキルカードが使える",
+      args: [
+        {
+          life: 3,
+          vitality: 0,
+          modifiers: [] as Idol["modifiers"],
+        } as Idol,
+        { kind: "normal", value: 3 },
+      ],
+      expected: true,
+    },
+    {
+      name: "normalコストに対してvitalityが足りる時、スキルカードが使える",
+      args: [
+        {
+          life: 0,
+          vitality: 3,
+          modifiers: [] as Idol["modifiers"],
+        } as Idol,
+        { kind: "normal", value: 3 },
+      ],
+      expected: true,
+    },
+    {
+      name: "normalコストに対してlifeとvitalityの合計が足りる時、スキルカードが使える",
+      args: [
+        {
+          life: 1,
+          vitality: 2,
+          modifiers: [] as Idol["modifiers"],
+        } as Idol,
+        { kind: "normal", value: 3 },
+      ],
+      expected: true,
+    },
+    {
+      name: "normalコストに対してlifeとvitalityの合計が足りない時、スキルカードが使えない",
+      args: [
+        {
+          life: 1,
+          vitality: 2,
+          modifiers: [] as Idol["modifiers"],
+        } as Idol,
+        { kind: "normal", value: 4 },
+      ],
+      expected: false,
+    },
+    {
+      name: "lifeコストを満たす時、スキルカードが使える",
+      args: [
+        {
+          life: 3,
+          vitality: 0,
+          modifiers: [] as Idol["modifiers"],
+        } as Idol,
+        { kind: "life", value: 3 },
+      ],
+      expected: true,
+    },
+    {
+      name: "lifeコスト満たさない時、スキルカードが使えない",
+      args: [
+        {
+          life: 3,
+          vitality: 10,
+          modifiers: [] as Idol["modifiers"],
+        } as Idol,
+        { kind: "life", value: 4 },
+      ],
+      expected: false,
+    },
+    {
+      name: "focusコストを満たす時、スキルカードが使える",
+      args: [
+        {
+          life: 0,
+          vitality: 0,
+          modifiers: [{ kind: "focus", amount: 3 }] as Idol["modifiers"],
+        } as Idol,
+        { kind: "focus", value: 3 },
+      ],
+      expected: true,
+    },
+    {
+      name: "focusコストを満たさない時、スキルカードが使えない",
+      args: [
+        {
+          life: 0,
+          vitality: 0,
+          modifiers: [{ kind: "focus", amount: 3 }] as Idol["modifiers"],
+        } as Idol,
+        { kind: "focus", value: 4 },
+      ],
+      expected: false,
+    },
+    {
+      name: "goodConditionコストを満たす時、スキルカードが使える",
+      args: [
+        {
+          life: 0,
+          vitality: 0,
+          modifiers: [
+            { kind: "goodCondition", duration: 3 },
+          ] as Idol["modifiers"],
+        } as Idol,
+        { kind: "goodCondition", value: 3 },
+      ],
+      expected: true,
+    },
+    {
+      name: "goodConditionコストを満たさない時、スキルカードが使えない",
+      args: [
+        {
+          life: 0,
+          vitality: 0,
+          modifiers: [
+            { kind: "goodCondition", duration: 3 },
+          ] as Idol["modifiers"],
+        } as Idol,
+        { kind: "goodCondition", value: 4 },
+      ],
+      expected: false,
+    },
+    {
+      name: "motivationコストを満たす時、スキルカードが使える",
+      args: [
+        {
+          life: 0,
+          vitality: 0,
+          modifiers: [{ kind: "motivation", amount: 3 }] as Idol["modifiers"],
+        } as Idol,
+        { kind: "motivation", value: 3 },
+      ],
+      expected: true,
+    },
+    {
+      name: "motivationコストを満たさない時、スキルカードが使えない",
+      args: [
+        {
+          life: 0,
+          vitality: 0,
+          modifiers: [{ kind: "motivation", amount: 3 }] as Idol["modifiers"],
+        } as Idol,
+        { kind: "motivation", value: 4 },
+      ],
+      expected: false,
+    },
+    {
+      name: "positiveImpressionコストを満たす時、スキルカードが使える",
+      args: [
+        {
+          life: 0,
+          vitality: 0,
+          modifiers: [
+            { kind: "positiveImpression", amount: 3 },
+          ] as Idol["modifiers"],
+        } as Idol,
+        { kind: "positiveImpression", value: 3 },
+      ],
+      expected: true,
+    },
+    {
+      name: "positiveImpressionコストを満たさない時、スキルカードが使えない",
+      args: [
+        {
+          life: 0,
+          vitality: 0,
+          modifiers: [
+            { kind: "positiveImpression", amount: 3 },
+          ] as Idol["modifiers"],
+        } as Idol,
+        { kind: "positiveImpression", value: 4 },
+      ],
+      expected: true,
+    },
+  ];
+  test.each(testCases)("$name", ({ args, expected }) => {
+    expect(validateCostComsumution(...args)).toStrictEqual(expected);
+  });
+});
+// validateCostComsumution で検証できる内容はそちらで行う
+describe("canUseCard", () => {
+  const testCases: Array<{
+    args: Parameters<typeof canUseCard>;
+    expected: ReturnType<typeof canUseCard>;
+    name: string;
+  }> = [
+    {
+      name: "コストを満たすリソースがない時、スキルカードを使えない",
+      args: [
+        {
+          idol: {
+            life: 3,
+            vitality: 0,
+            modifiers: [] as Idol["modifiers"],
+          },
+        } as Lesson,
+        { kind: "normal", value: 4 },
+        undefined,
+      ],
+      expected: false,
+    },
+    {
+      name: "コストを満たすリソースがあり、追加条件が無い時、スキルカードを使える",
+      args: [
+        {
+          idol: {
+            life: 3,
+            vitality: 0,
+            modifiers: [] as Idol["modifiers"],
+          },
+        } as Lesson,
+        { kind: "normal", value: 3 },
+        undefined,
+      ],
+      expected: true,
+    },
+    {
+      name: "ターン数の追加条件を満たす時、スキルカードを使える",
+      args: [
+        {
+          idol: {
+            life: 0,
+            vitality: 0,
+            modifiers: [] as Idol["modifiers"],
+          },
+          turnNumber: 3,
+        } as Lesson,
+        { kind: "normal", value: 0 },
+        { kind: "countTurnNumber", min: 3 },
+      ],
+      expected: true,
+    },
+    {
+      name: "ターン数の追加条件を満たさない時、スキルカードを使えない",
+      args: [
+        {
+          idol: {
+            life: 0,
+            vitality: 0,
+            modifiers: [] as Idol["modifiers"],
+          },
+          turnNumber: 2,
+        } as Lesson,
+        { kind: "normal", value: 0 },
+        { kind: "countTurnNumber", min: 3 },
+      ],
+      expected: false,
+    },
+    {
+      name: "元気0の追加条件を満たす時、スキルカードを使える",
+      args: [
+        {
+          idol: {
+            life: 0,
+            vitality: 0,
+            modifiers: [] as Idol["modifiers"],
+          },
+          turnNumber: 3,
+        } as Lesson,
+        { kind: "normal", value: 0 },
+        { kind: "countVitalityZero" },
+      ],
+      expected: true,
+    },
+    {
+      name: "元気0の追加条件を満たさない時、スキルカードを使えない",
+      args: [
+        {
+          idol: {
+            life: 0,
+            vitality: 1,
+            modifiers: [] as Idol["modifiers"],
+          },
+          turnNumber: 3,
+        } as Lesson,
+        { kind: "normal", value: 0 },
+        { kind: "countVitalityZero" },
+      ],
+      expected: false,
+    },
+    {
+      name: "好調所持の追加条件を満たす時、スキルカードを使える",
+      args: [
+        {
+          idol: {
+            life: 3,
+            vitality: 0,
+            modifiers: [
+              { kind: "goodCondition", duration: 1 },
+            ] as Idol["modifiers"],
+          },
+          turnNumber: 3,
+        } as Lesson,
+        { kind: "normal", value: 3 },
+        { kind: "hasGoodCondition" },
+      ],
+      expected: true,
+    },
+    {
+      name: "好調所持の追加条件を満たさない時、スキルカードを使える",
+      args: [
+        {
+          idol: {
+            life: 3,
+            vitality: 0,
+            modifiers: [] as Idol["modifiers"],
+          },
+          turnNumber: 3,
+        } as Lesson,
+        { kind: "normal", value: 3 },
+        { kind: "hasGoodCondition" },
+      ],
+      expected: false,
+    },
+    {
+      name: "life比率以上の追加条件を満たす時、スキルカードを使える",
+      args: [
+        {
+          idol: {
+            life: 5,
+            original: {
+              maxLife: 10,
+            },
+            vitality: 0,
+            modifiers: [] as Idol["modifiers"],
+          },
+        } as Lesson,
+        { kind: "normal", value: 3 },
+        {
+          kind: "measureValue",
+          valueKind: "life",
+          criterionKind: "greaterEqual",
+          percentage: 50,
+        },
+      ],
+      expected: true,
+    },
+    {
+      name: "life比率以上の追加条件を満たさない時、スキルカードを使えない",
+      args: [
+        {
+          idol: {
+            life: 4,
+            original: {
+              maxLife: 10,
+            },
+            vitality: 0,
+            modifiers: [] as Idol["modifiers"],
+          },
+        } as Lesson,
+        { kind: "normal", value: 3 },
+        {
+          kind: "measureValue",
+          valueKind: "life",
+          criterionKind: "greaterEqual",
+          percentage: 50,
+        },
+      ],
+      expected: false,
+    },
+    {
+      name: "life比率以下の追加条件を満たす時、スキルカードを使える",
+      args: [
+        {
+          idol: {
+            life: 5,
+            original: {
+              maxLife: 10,
+            },
+            vitality: 0,
+            modifiers: [] as Idol["modifiers"],
+          },
+        } as Lesson,
+        { kind: "normal", value: 3 },
+        {
+          kind: "measureValue",
+          valueKind: "life",
+          criterionKind: "lessEqual",
+          percentage: 50,
+        },
+      ],
+      expected: true,
+    },
+    {
+      name: "life比率以下の追加条件を満たさない時、スキルカードを使えない",
+      args: [
+        {
+          idol: {
+            life: 6,
+            original: {
+              maxLife: 10,
+            },
+            vitality: 0,
+            modifiers: [] as Idol["modifiers"],
+          },
+        } as Lesson,
+        { kind: "normal", value: 3 },
+        {
+          kind: "measureValue",
+          valueKind: "life",
+          criterionKind: "lessEqual",
+          percentage: 50,
+        },
+      ],
+      expected: false,
+    },
+    {
+      name: "score比率以上の追加条件を満たす時、スキルカードを使える",
+      args: [
+        {
+          idol: {
+            life: 0,
+            vitality: 0,
+            modifiers: [] as Idol["modifiers"],
+          },
+          score: 10,
+          clearScoreThresholds: {
+            clear: 10,
+          },
+        } as Lesson,
+        { kind: "normal", value: 0 },
+        {
+          kind: "measureValue",
+          valueKind: "score",
+          criterionKind: "greaterEqual",
+          percentage: 100,
+        },
+      ],
+      expected: true,
+    },
+    {
+      name: "score比率以上の追加条件を満たさない時、スキルカードを使えない",
+      args: [
+        {
+          idol: {
+            life: 0,
+            vitality: 0,
+            modifiers: [] as Idol["modifiers"],
+          },
+          score: 9,
+          clearScoreThresholds: {
+            clear: 10,
+          },
+        } as Lesson,
+        { kind: "normal", value: 0 },
+        {
+          kind: "measureValue",
+          valueKind: "score",
+          criterionKind: "greaterEqual",
+          percentage: 100,
+        },
+      ],
+      expected: false,
+    },
+    {
+      name: "score比率以下の追加条件を満たす時、スキルカードを使える",
+      args: [
+        {
+          idol: {
+            life: 0,
+            vitality: 0,
+            modifiers: [] as Idol["modifiers"],
+          },
+          score: 10,
+          clearScoreThresholds: {
+            clear: 10,
+          },
+        } as Lesson,
+        { kind: "normal", value: 0 },
+        {
+          kind: "measureValue",
+          valueKind: "score",
+          criterionKind: "lessEqual",
+          percentage: 100,
+        },
+      ],
+      expected: true,
+    },
+    {
+      name: "score比率以下の追加条件を満たさない時、スキルカードを使えない",
+      args: [
+        {
+          idol: {
+            life: 0,
+            vitality: 0,
+            modifiers: [] as Idol["modifiers"],
+          },
+          score: 11,
+          clearScoreThresholds: {
+            clear: 10,
+          },
+        } as Lesson,
+        { kind: "normal", value: 0 },
+        {
+          kind: "measureValue",
+          valueKind: "score",
+          criterionKind: "lessEqual",
+          percentage: 100,
+        },
+      ],
+      expected: false,
+    },
+    {
+      name: "score比率の追加条件があるが、レッスンにクリアスコア閾値が設定されていない時、スキルカードを使える",
+      args: [
+        {
+          idol: {
+            life: 0,
+            vitality: 0,
+            modifiers: [] as Idol["modifiers"],
+          },
+          score: 10,
+        } as Lesson,
+        { kind: "normal", value: 0 },
+        {
+          kind: "measureValue",
+          valueKind: "score",
+          criterionKind: "greaterEqual",
+          percentage: 100,
+        },
+      ],
+      expected: true,
+    },
+  ];
+  test.each(testCases)("$name", ({ args, expected }) => {
+    expect(canUseCard(...args)).toStrictEqual(expected);
   });
 });
 describe("drawCardsOnLessonStart", () => {
