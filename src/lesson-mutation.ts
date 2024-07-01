@@ -218,6 +218,135 @@ export const previewCardUsage = (
   };
 };
 
+/** アイドルがコスト分のリソースを持つかを検証する */
+const validateCostComsumution = (idol: Idol, card: Card): boolean => {
+  const cardContent = getCardContentDefinition(card);
+  const actualCost = calculateActualActionCost(
+    cardContent.cost,
+    idol.modifiers,
+  );
+  const actualCostKind = actualCost.kind;
+  switch (actualCostKind) {
+    case "focus": {
+      const focus = idol.modifiers.find((e) => e.kind === "focus");
+      const focusAmount = focus && "amount" in focus ? focus.amount : 0;
+      return actualCost.value <= focusAmount;
+    }
+    case "goodCondition": {
+      const goodCondition = idol.modifiers.find(
+        (e) => e.kind === "goodCondition",
+      );
+      const goodConditionDuration =
+        goodCondition && "duration" in goodCondition
+          ? goodCondition.duration
+          : 0;
+      return actualCost.value <= goodConditionDuration;
+    }
+    case "life": {
+      return actualCost.value <= idol.life;
+    }
+    case "motivation": {
+      const motivation = idol.modifiers.find((e) => e.kind === "motivation");
+      const motivationAmount =
+        motivation && "amount" in motivation ? motivation.amount : 0;
+      return actualCost.value <= motivationAmount;
+    }
+    case "normal": {
+      return actualCost.value <= idol.life + idol.vitality;
+    }
+    case "positiveImpression": {
+      const positiveImpression = idol.modifiers.find(
+        (e) => e.kind === "positiveImpression",
+      );
+      const positiveImpressionAmount =
+        positiveImpression && "amount" in positiveImpression
+          ? positiveImpression.amount
+          : 0;
+      return actualCost.value <= positiveImpressionAmount;
+    }
+    default: {
+      const unreachable: never = actualCostKind;
+      throw new Error(`Unreachable statement`);
+    }
+  }
+};
+
+/** スキルカードが使用できるかを判定する */
+export const canUseCard = (lesson: Lesson, card: Card): boolean => {
+  const costValidation = validateCostComsumution(lesson.idol, card);
+  if (!costValidation) {
+    return false;
+  }
+  const cardContent = getCardContentDefinition(card);
+  const condition = cardContent.condition;
+  if (!condition) {
+    return true;
+  }
+  const conditionKind = condition.kind;
+  switch (conditionKind) {
+    case "countTurnNumber": {
+      return lesson.turnNumber >= condition.min;
+    }
+    case "countVitalityZero": {
+      return lesson.idol.vitality === 0;
+    }
+    case "hasGoodCondition": {
+      return (
+        lesson.idol.modifiers.find((e) => e.kind === "goodCondition") !==
+        undefined
+      );
+    }
+    case "measureValue": {
+      let targetPercentage: number | undefined = 0;
+      const valueKind = condition.valueKind;
+      switch (valueKind) {
+        case "life": {
+          targetPercentage = Math.floor(
+            (lesson.idol.life * 100) / lesson.idol.original.maxLife,
+          );
+          break;
+        }
+        case "score": {
+          if (lesson.clearScoreThresholds) {
+            const result = calculateClearScoreProgress(
+              lesson.score,
+              lesson.clearScoreThresholds,
+            );
+            targetPercentage = result.clearScoreProgressPercentage;
+          }
+          break;
+        }
+        default: {
+          const unreachable: never = valueKind;
+          throw new Error(`Unreachable statement`);
+        }
+      }
+      if (targetPercentage === undefined) {
+        return true;
+      }
+      const criterionKind = condition.criterionKind;
+      switch (criterionKind) {
+        case "greaterEqual": {
+          return targetPercentage >= condition.percentage;
+        }
+        case "lessEqual": {
+          return targetPercentage <= condition.percentage;
+        }
+        default: {
+          const unreachable: never = criterionKind;
+          throw new Error(`Unreachable statement`);
+        }
+      }
+    }
+    default: {
+      const unreachable: never = conditionKind;
+      throw new Error(`Unreachable statement`);
+    }
+  }
+};
+
+// export const canInvokeEffect = (lesson: Lesson, card: Card): boolean => {};
+
 const calculateActualAndMaxComsumution = (
   resourceValue: number,
   costValue: number,
