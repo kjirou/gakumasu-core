@@ -1222,6 +1222,7 @@ describe("useCard", () => {
         ],
       });
       lesson.hand = ["a"];
+      lesson.idol.modifiers = [{ kind: "motivation", amount: 3 }];
       const { updates } = useCard(lesson, 1, {
         selectedCardInHandIndex: 0,
         getRandom: () => 0,
@@ -1248,6 +1249,7 @@ describe("useCard", () => {
         ],
       });
       lesson.hand = ["a"];
+      lesson.idol.modifiers = [{ kind: "goodCondition", duration: 2 }];
       const { updates } = useCard(lesson, 1, {
         selectedCardInHandIndex: 0,
         getRandom: () => 0,
@@ -1554,6 +1556,7 @@ describe("useCard", () => {
           ],
         });
         lesson.hand = ["a"];
+        lesson.idol.modifiers = [{ kind: "positiveImpression", amount: 2 }];
         const { updates } = useCard(lesson, 1, {
           selectedCardInHandIndex: 0,
           getRandom: () => 0,

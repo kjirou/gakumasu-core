@@ -3841,7 +3841,7 @@ export const cards: CardDefinition[] = [
     nonDuplicative: true,
     rarity: "ssr",
     base: {
-      cost: { kind: "goodCondition", value: 2 },
+      cost: { kind: "positiveImpression", value: 2 },
       effects: [
         { kind: "increaseRemainingTurns", amount: 1 },
         {
@@ -3856,7 +3856,7 @@ export const cards: CardDefinition[] = [
       usableOncePerLesson: true,
     },
     enhanced: {
-      cost: { kind: "goodCondition", value: 1 },
+      cost: { kind: "positiveImpression", value: 1 },
       effects: [
         { kind: "increaseRemainingTurns", amount: 1 },
         {

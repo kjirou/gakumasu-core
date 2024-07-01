@@ -822,6 +822,15 @@ export const useCard = (
   let nextHistoryResultIndex = historyResultIndex;
 
   //
+  // 使用可否のバリデーション
+  //
+  // - 本関数は、使用条件を満たさないスキルカードに対しては使えない前提
+  //
+  if (!canUseCard(lesson, cardContent.cost, cardContent.condition)) {
+    throw new Error(`Can not use the card: ${card.original.definition.name}`);
+  }
+
+  //
   // 使用した手札を捨札か除外へ移動
   //
   const discardOrRemovedCardUpdates: LessonUpdateQuery[] = [
@@ -869,6 +878,10 @@ export const useCard = (
   nextHistoryResultIndex++;
 
   //
+  // TODO: スキルカード再使用分でループ
+  //
+
+  //
   // 効果発動
   //
   const effectUpdates: LessonUpdateQuery[] = computeEffects(
@@ -887,10 +900,6 @@ export const useCard = (
   }));
   newLesson = patchUpdates(newLesson, effectUpdates);
   nextHistoryResultIndex++;
-
-  //
-  // TODO: スキルカード再使用
-  //
 
   //
   // TODO: スキルカード使用時トリガー
