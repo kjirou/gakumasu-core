@@ -188,6 +188,13 @@ export const createLessonGamePlay = (params: {
   };
 };
 
+export const calculateActualLastTurnNumber = (lesson: Lesson): number =>
+  lesson.lastTurnNumber + lesson.remainingTurns;
+
+/** 残りターン数を計算する、最終ターンは1 */
+export const calculateActualRemainingTurns = (lesson: Lesson): number =>
+  calculateActualLastTurnNumber(lesson) - lesson.turnNumber + 1;
+
 /** 「消費体力減少」・「消費体力削減」・「消費体力増加」を反映したコストを返す */
 export const calculateActualActionCost = (
   cost: ActionCost,

@@ -5,6 +5,7 @@ import type {
   CardInProduction,
   CardUsageCondition,
   Effect,
+  EffectCondition,
   GetRandom,
   IdGenerator,
   Idol,
@@ -18,12 +19,13 @@ import type {
 import { filterGeneratableSsrCardsData } from "./data/card";
 import {
   calculateActualActionCost,
+  calculateActualRemainingTurns,
   calculateClearScoreProgress,
   maxHandSize,
   patchUpdates,
   prepareCardsForLesson,
 } from "./models";
-import { shuffleArray } from "./utils";
+import { shuffleArray, validateNumberInRange } from "./utils";
 
 const getCardContentDefinition = (card: Card): CardContentDefinition => {
   return card.original.definition.enhanced !== undefined &&
@@ -347,7 +349,67 @@ export const canUseCard = (
   }
 };
 
-// export const canInvokeEffect = (lesson: Lesson, card: Card): boolean => {};
+/** 各効果が発動できるかを判定する */
+export const canInvokeEffect = (
+  lesson: Lesson,
+  condition: EffectCondition,
+): boolean => {
+  const conditionKind = condition.kind;
+  switch (conditionKind) {
+    case "countModifier": {
+      let targetValue: number;
+      const modifierKind = condition.modifierKind;
+      switch (modifierKind) {
+        case "focus": {
+          const focus = lesson.idol.modifiers.find((e) => e.kind === "focus");
+          targetValue = focus && "amount" in focus ? focus.amount : 0;
+          break;
+        }
+        case "motivation": {
+          const motivation = lesson.idol.modifiers.find(
+            (e) => e.kind === "motivation",
+          );
+          targetValue =
+            motivation && "amount" in motivation ? motivation.amount : 0;
+          break;
+        }
+        case "positiveImpression": {
+          const positiveImpression = lesson.idol.modifiers.find(
+            (e) => e.kind === "positiveImpression",
+          );
+          targetValue =
+            positiveImpression && "amount" in positiveImpression
+              ? positiveImpression.amount
+              : 0;
+          break;
+        }
+        default: {
+          const unreachable: never = modifierKind;
+          throw new Error(`Unreachable statement`);
+        }
+      }
+      return targetValue >= condition.min;
+    }
+    case "countReminingTurns": {
+      return calculateActualRemainingTurns(lesson) <= condition.max;
+    }
+    case "countVitality": {
+      return validateNumberInRange(lesson.idol.vitality, condition.range);
+    }
+    case "hasGoodCondition": {
+      return (
+        lesson.idol.modifiers.find((e) => e.kind === "goodCondition") !==
+        undefined
+      );
+    }
+    case "measureIfLifeIsEqualGreaterThanHalf": {
+    }
+    default: {
+      const unreachable: never = conditionKind;
+      throw new Error(`Unreachable statement`);
+    }
+  }
+};
 
 const calculateActualAndMaxComsumution = (
   resourceValue: number,

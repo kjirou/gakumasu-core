@@ -1,4 +1,4 @@
-import { GetRandom, IdGenerator } from "./types";
+import { GetRandom, IdGenerator, RangedNumber } from "./types";
 
 /**
  * Shuffle an array with the Fisher–Yates algorithm.
@@ -32,4 +32,18 @@ export const createIdGenerator = (): IdGenerator => {
     counter++;
     return `${counter}`;
   };
+};
+
+export const validateNumberInRange = (
+  target: number,
+  range: RangedNumber,
+): boolean => {
+  if ("min" in range && "max" in range) {
+    return range.min <= target && target <= range.max;
+  } else if ("min" in range) {
+    return range.min <= target;
+  } else if ("max" in range) {
+    return target <= range.max;
+  }
+  throw new Error("Invalid range");
 };
