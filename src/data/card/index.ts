@@ -1,4 +1,4 @@
-import { CardDefinition } from "../../types";
+import { CardDefinition, ProducePlan } from "../../types";
 
 export const findCardDataById = (
   id: CardDefinition["id"],
@@ -11,6 +11,18 @@ export const getCardDataById = (id: CardDefinition["id"]): CardDefinition => {
   }
   return card;
 };
+
+/** 「ランダムな強化済みスキルカード（SSR）を、手札に生成」用の候補を返す */
+export const filterGeneratableCardsData = (
+  producePlanKind: ProducePlan["kind"],
+) =>
+  cards.filter(
+    (card) =>
+      card.cardProviderKind === "others" &&
+      (card.cardPossessionKind === "free" ||
+        card.cardPossessionKind === producePlanKind) &&
+      card.rarity === "ssr",
+  );
 
 /**
  * スキルカードデータの定義
@@ -2116,7 +2128,7 @@ export const cards: CardDefinition[] = [
     },
   },
   {
-    id: "zonzaikan",
+    id: "sonzaikan",
     name: "存在感",
     cardPossessionKind: "sense",
     cardProviderKind: "others",
@@ -3467,7 +3479,7 @@ export const cards: CardDefinition[] = [
         {
           kind: "performLeveragingVitality",
           reductionKind: "zero",
-          percentage: 250,
+          percentage: 160,
         },
       ],
       usableOncePerLesson: true,
@@ -3835,9 +3847,9 @@ export const cards: CardDefinition[] = [
     nonDuplicative: true,
     rarity: "ssr",
     base: {
-      cost: { kind: "goodCondition", value: 2 },
+      cost: { kind: "positiveImpression", value: 2 },
       effects: [
-        { kind: "increaseTurns", amount: 1 },
+        { kind: "increaseRemainingTurns", amount: 1 },
         {
           kind: "getModifier",
           modifier: {
@@ -3850,9 +3862,9 @@ export const cards: CardDefinition[] = [
       usableOncePerLesson: true,
     },
     enhanced: {
-      cost: { kind: "goodCondition", value: 1 },
+      cost: { kind: "positiveImpression", value: 1 },
       effects: [
-        { kind: "increaseTurns", amount: 1 },
+        { kind: "increaseRemainingTurns", amount: 1 },
         {
           kind: "getModifier",
           modifier: {

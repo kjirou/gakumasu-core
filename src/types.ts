@@ -1,3 +1,8 @@
+/** Math.random と同じインターフェース */
+export type GetRandom = () => number;
+
+export type IdGenerator = () => string;
+
 export type RangedNumber =
   | { min: number }
   | { max: number }
@@ -17,7 +22,7 @@ export type IdolParameterKind = keyof IdolParameters;
  * - ゲーム上は、出現するカードの種類・レッスンの小目標のパターン・コンテストのAIなど、広範に影響していそう
  * - 関連する原文は、「プロデュースの方向性を示すもので、〜」「〜を活用して育成するプラン」
  */
-type ProducePlan =
+export type ProducePlan =
   | {
       /** 「ロジック」 */
       kind: "logic";
@@ -200,7 +205,12 @@ export type Modifier =
       duration: number;
     }
   | {
-      /** 「好印象+{amount}」 */
+      /**
+       * 「好印象+{amount}」
+       *
+       * - とても不思議だが、好調のように「ターン」表記ではないので、 amount にしている
+       *   - 消費する時も、「私がスター」は「好印象消費2」の表記、一方で「国民的アイドル」は「好調消費1ターン」の表記
+       */
       kind: "positiveImpression";
       amount: number;
     };
@@ -328,6 +338,7 @@ export type Effect = (
        * 手札を生成する
        *
        * - 原文は、「ランダムな強化済みスキルカード（SSR）を、手札に生成」
+       * - 「重複不可」は無視して対象を選択する
        */
       kind: "generateCard";
     }
@@ -339,7 +350,7 @@ export type Effect = (
        * - この効果は、状態修正ではなさそう
        *   - 左アイコンリストにもそれをタップしたリストにもない
        */
-      kind: "increaseTurns";
+      kind: "increaseRemainingTurns";
       amount: number;
     }
   | {
@@ -404,7 +415,7 @@ export type Effect = (
        * - 原文の構文は、「{modifierKind}の{percentage}%分パラメータ上昇」
        *   - 「200%スマイル」は、「好印象の100%分パラメータ上昇」
        *   - 「開花」は、「やる気の200%分パラメータ上昇」
-       * - TODO: そのスキルカード使用時に別効果で含まれる状態修正を含むのか？
+       * - 割合計算上生じるスコアの端数は切り上げ
        */
       kind: "performLeveragingModifier";
       modifierKind: "motivation" | "positiveImpression";
@@ -420,6 +431,7 @@ export type Effect = (
        * - 原文は「元気を{modifierReductionKind}にして、減少前の元気の{percentage}%分パラメータ上昇」
        *   - 「ハートの合図」は「元気を半分にして、減少前の元気の130%分パラメータ上昇」
        *   - 「届いて！」は「元気を0にして、減少前の元気の160%分パラメータ上昇」
+       * - 割合計算上生じるスコアの端数は切り上げ
        */
       reductionKind?: "halve" | "zero";
       /** 状態修正値に対するパーセント表記の乗数、原文は「元気の{percentage}%分パラメータ上昇」 */
@@ -492,13 +504,22 @@ export type CardUsageCondition =
        * - 原文は、「{valueKind}が{percentage}%{criterionKind}の場合、使用可」
        *   - 「ご指導ご鞭撻」は、「体力の50%以上の場合、使用可」
        *   - 「お姉ちゃんだもの！」は、「レッスンCLEARの100%以下の場合、使用可」
-       * - TODO: [仕様確認] 端数処理
+       * - TODO: [仕様確認] life と score 両方での端数処理、多分プレイヤー有利側だと思うので一旦それで実装
        */
       kind: "measureValue";
       valueKind: "life" | "score";
       criterionKind: "greaterEqual" | "lessEqual";
       percentage: number;
     };
+
+/**
+ * コストとして消費されることがある状態修正の種類
+ */
+export type ActionCostModifierKind =
+  | "focus"
+  | "goodCondition"
+  | "motivation"
+  | "positiveImpression";
 
 /**
  * レッスン中の各種コスト
@@ -515,13 +536,7 @@ export type ActionCost = {
    *
    * - "normal" は通常コストで体力または元気を消費する、"life" は体力のみを消費する
    */
-  kind:
-    | "focus"
-    | "goodCondition"
-    | "life"
-    | "motivation"
-    | "normal"
-    | "positiveImpression";
+  kind: "life" | "normal" | ActionCostModifierKind;
   value: number;
 };
 
@@ -602,8 +617,37 @@ export type CardDefinition = {
  */
 export type CardInProduction = {
   definition: CardDefinition;
+  /**
+   * 有効か
+   *
+   * - 削除・変換・強化した場合、対象は false になる。強化は、新しいスキルカードとして追加する。
+   */
+  enabled: boolean;
   enhanced: boolean;
+  /**
+   * IdolInProduction["deck"] 内で一意のID
+   *
+   * - 本番では、常に IdGenerator で生成する
+   * - テストでは、IdGenerator 生成と被らない任意の値の設定が可能
+   */
+  id: string;
 };
+
+// TODO: supportCard は、アイコン表示のためにカードを特定できる必要がある
+type CardEnhancement =
+  | {
+      /** レッスン中の強化により付与された強化、原文の「レッスン中強化」に相当、"original"や既に"effect"がある場合は付与されない */
+      kind: "effect";
+    }
+  | {
+      /** プロデュース中のスキルカードに付与されている強化 */
+      kind: "original";
+    }
+  | {
+      /** レッスン開始時に付与されるサポートカードによる強化、この強化のみ累積して効果がある */
+      kind: "supportCard";
+      supportCardId: string;
+    };
 
 /**
  * レッスン中のスキルカード
@@ -611,15 +655,23 @@ export type CardInProduction = {
  * - レッスン開始前に生成され、レッスン終了時に破棄される
  */
 export type Card = {
-  original: CardInProduction;
   /**
-   * レッスン中の一時的な強化状態
+   * カード強化状態
    *
-   * - 「レッスン中強化」や、その他の強化
+   * - 通常強化・「レッスン中強化」・サポートカードによる強化状態
    * - TODO: [仕様確認] サポカによるレッスン中のカード強化の仕様がわからない
    *   - 「静かな意志」が、カードの強化＆サポカ強化1で、コストが4から3に下がっていたのは確認した
    */
-  temporaryEnhancements: Array<{}>;
+  enhancements: CardEnhancement[];
+  /**
+   * スキルカードID
+   *
+   * - 1レッスン内で一意
+   * - 所持しているスキルカードは CardInProduction["id"] を複製する、一方で生成したスキルカードは新たにIDを生成して割り振る
+   *   - CardInProduction["id"] を複製する仕様を維持しないと、テストコードが複雑になる
+   */
+  id: string;
+  original: CardInProduction;
 };
 
 export type ProducerItemTrigger = (
@@ -669,9 +721,11 @@ export type ProducerItemTrigger = (
        *   - 「Dearリトルプリンス」は、「好調の効果ターンが増加後、好調3ターン」
        *   - 「放課後のらくがき」は、「集中が増加後体力が50%以上の場合、集中+2」
        *   - 「ひみつ特訓カーデ」は、「やる気が増加後、やる気+3」
-       * - 状態修正の継続効果による増加は、増加と見做されないよう
-       *   - 例えば、「ひみつ特訓カーデ」は、「厳選初星ブレンド」の効果によるやる気増加では発動しない
+       * - おそらくは、現状は、スキルカード使用による状態修正の増加のみを対象としている
+       *   - 少なくとも、状態修正の継続効果による増加は、増加と見做されないよう
+       *     - 例えば、「ひみつ特訓カーデ」は、「厳選初星ブレンド」の効果によるやる気増加では発動しない
        *   - TODO: Pアイテムによる増加はトリガーになるのか？相互ループの処理が面倒そうだからなさそうな気はする
+       *   - TODO: Pドリンクによる増加はトリガーになるのか？
        */
       kind: "modifierIncrease";
       modifierKind:
@@ -792,6 +846,8 @@ export type ProducerItemDefinition = {
  */
 export type ProducerItemInProduction = {
   definition: ProducerItemDefinition;
+  enhanced?: boolean;
+  id: string;
 };
 
 /**
@@ -824,6 +880,7 @@ export type CharacterDefinition = {
  */
 export type IdolDefinition = {
   characterId: CharacterDefinition["id"];
+  id: string;
   producePlan: ProducePlan;
   rarity: "r" | "sr" | "ssr";
   specificCardId: CardDefinition["id"];
@@ -838,10 +895,13 @@ export type IdolDefinition = {
  * - プロデュース開始時に生成され、プロデュース終了時に破棄される
  */
 export type IdolInProduction = {
+  deck: CardInProduction[];
   definition: IdolDefinition;
-  idolParameters: IdolParameters;
+  // TODO: まだ使わないので一旦コメントアウト
+  // idolParameters: IdolParameters;
   life: number;
   maxLife: number;
+  producerItems: ProducerItemInProduction[];
 };
 
 /**
@@ -851,6 +911,7 @@ export type IdolInProduction = {
  */
 export type Idol = {
   life: number;
+  modifiers: Modifier[];
   original: IdolInProduction;
   /** 本レッスン中にスキルカードを使用した回数、関連する原文は「レッスン中に使用したスキルカード{n}枚ごとに、」 */
   totalCardUsageCount: number;
@@ -867,10 +928,261 @@ export type Idol = {
 /**
  * レッスン
  *
+ * - 本家では、「レッスン」「試験」「コンテスト」として表現されているもの
  * - レッスン開始前に生成され、レッスン終了時に破棄される
  */
-type Lesson = {
+export type Lesson = {
+  /** レッスン内に存在するスキルカードリスト */
+  cards: Card[];
+  /**
+   * レッスンのクリアに必要なスコア
+   *
+   * - 本家の仕様
+   *   - レッスン
+   *     - 通常/SPレッスンは、クリアスコアの倍がバーフェクト
+   *     - 中間試験追い込みは90/270
+   *     - 最終試験追い込みは165/600
+   *   - 試験
+   *     - 中間試験の方は、「スコア1700以上で中間試験突破」のように書いてあるので、これがそれに相当しそう？
+   * - TODO: [仕様確認] 試験やコンテストの際に「レッスンCLEARの100%以下の場合、使用可」の条件はどうなっている？
+   */
+  clearScoreThresholds:
+    | {
+        clear: number;
+        /** clear の数値を含む合計で指定する、本家の表現へ合わせている */
+        perfect?: number;
+      }
+    | undefined;
+  /** 山札、原文でも「山札」 */
+  deck: Array<Card["id"]>;
+  /** 捨札、原文でも「捨札」、山札の再生成時に含まれるカード群 */
+  discardPile: Array<Card["id"]>;
+  /** 手札、原文でも「手札」、最大5枚 */
+  hand: Array<Card["id"]>;
+  idol: Idol;
+  /** 最終ターン数、この値と同じターン数目の行動で終了、「ターン追加」の効果は含まない */
+  lastTurnNumber: number;
+  /** 最終ターン数への修正、現状は「ターン追加」効果により増加する状況しか考慮していない、つまり常に正の数 */
+  remainingTurns: number;
+  /** 除外されたカード群、原文は「除外」、山札の再生成時に含まれないカード群 */
+  removedCardPile: Array<Card["id"]>;
+  /** 選択中の手札インデックス */
+  selectedCardInHandIndex: number | undefined;
+  /**
+   * スコア
+   *
+   * - 原文では、レッスン時は「パラメータ」、試験・コンテスト時は「スコア」と表記されているもの
+   */
   score: number;
   /** ターン数、最初のターンは1、関連する原文は「{turnNumber}目以降の場合、使用可」 */
   turnNumber: number;
+};
+
+/**
+ * レッスン履歴レコード
+ *
+ * TODO: 後回し、LessonUpdateQuery を集計して生成する
+ *
+ * - 本家で、レッスン中に右下のボタンから表示できる履歴を再現するためのもの
+ * - 原文の構文は、以下の通り
+ *   - ターン別にセクションになっており、ヘッドラインと結果レコードリストがある。結果レコードの中には体力・元気・状態変化別の差分レコードがある。
+ *   - 好調や好印象などのターン毎の自然減少は、どの階層のセクションにも表示されない
+ *   - ヘッドライン:
+ *     - 「残りターン数{n}」「{n}ターン目」「{スコアボーナス}%」
+ *   - 結果レコードのヘッドライン:
+ *     - 「スキルカード「{名称}」」
+ *     - 「Pアイテム「{名称}」」
+ *     - 「Pドリンク「{名称}」」
+ *     - 「持続効果「{名称}」」
+ *       - 「厳選初星マキアート」などのターン毎に状態変化を追加する効果、好印象によるスコア加算、遅延付き効果、などが含まれる
+ *     - 「応援」
+ *     - 「トラブル」
+ *     - スキルカード未使用時は、結果レコードのヘッドラインなし
+ *       - 差分レコードの1行目に「スキルカード未使用」
+ *   - 差分レコードのヘッドライン:
+ *     - 「{Pアイテム名}」
+ *       - 状態変化などのトリガーによりPアイテムが発動したとき
+ *   - 差分レコード
+ *     - 「(スコア|元気|好調|集中|好印象|やる気|スキルカード使用数追加) {before} → {after}」
+ *       - 値は3桁毎のカンマ区切り無し
+ *       - 増加と減少で色が違う
+ *       - スコアの際は、複数回発動の時は各れコードが別で残る
+ *         - 「コール＆レスポンス」の効果が分かれている2回も、「試行錯誤」の効果が1つの2回も、同様に別れコードで残った
+ *     - 「発動予約が付与」
+ *     - 「スキルカード 「{名称}」を1枚山札から引いた」
+ *     - 「スキルカード 「{名称}」を強化」
+ *       - 強化済みカードを強化しても履歴には残る
+ *     - 「ターンを{n}ターン追加」
+ *     - 「{固有名詞}が付与」
+ *       - Pドリンクの「厳選初星マキアート」を使った時は「厳選初星マキアートが付与」という表記だった
+ *       - 「烏龍茶」の時は、元気の表記だったので、一部の効果はこうなるよう
+ * - TODO: 手札情報ボタンの内容
+ */
+type LessonHistoryRecord =
+  | {
+      kind: "cardUsage";
+    }
+  | {
+      kind: "cheering";
+    }
+  | {
+      kind: "trouble";
+    };
+
+export type LessonUpdateQueryReason = (
+  | {
+      /** スキルカード使用 */
+      kind: "cardUsage";
+      cardId: Card["id"];
+    }
+  | {
+      /** スキルカード使用プレビュー */
+      kind: "cardUsagePreview";
+    }
+  | {
+      /** スキルカード使用時トリガーにより発動した効果 */
+      kind: "cardUsageTrigger";
+    }
+  | {
+      /** レッスン終了 */
+      kind: "lessonEnd";
+    }
+  | {
+      /** レッスン生成直後 */
+      kind: "lessonInitialization";
+    }
+  | {
+      /** レッスン開始時トリガーにより発動した効果 */
+      kind: "lessonStartTrigger";
+    }
+  | {
+      /** 状態修正増加トリガーにより発動した効果 */
+      kind: "modifierIncreaseTrigger";
+    }
+  | {
+      /**
+       * ターン終了時トリガーにより発動した効果
+       *
+       * - 好調や好印象などのターン経過毎の減少もこれで表現する
+       */
+      kind: "turnEndTrigger";
+    }
+  | {
+      /** ターン開始時トリガーにより発動した効果 */
+      kind: "turnStartTrigger";
+    }
+) & {
+  /**
+   * レッスン履歴上のターン数
+   *
+   * - historyResultIndex 含めて、ゲーム内のレッスン履歴のどこに含まれるかを表現したもの
+   * - レッスン履歴を生成する時だけではく、タイムトラベル機能を作るときの程よい区切りにも使う予定
+   * - ターン数なので、1から始まる連番
+   *   - 0 から始まり、必ず漏れがない。ターン数増加も1レコードになっているため。
+   */
+  historyTurnNumber: number;
+  /**
+   * レッスン履歴の1ターン内の結果インデックス
+   *
+   * - ゲーム内のレッスン履歴内の1ターン内の結果レコードリストの何番目に含まれるかを表現したもの
+   * - 1から始まる連番
+   * - 本家のレッスン履歴へ表示されないものも、データ上は1レコードとして含める。例えば、手札の配布・好調や好印象のターン毎の自然減少、など。
+   */
+  historyResultIndex: number;
+};
+
+export type LessonUpdateQueryDiff =
+  | {
+      kind: "cardEnhancement";
+      cardIds: Array<Card["id"]>;
+    }
+  | {
+      /**
+       * カード配置の上書き
+       *
+       * - 変化のあった配置のみプロパティが存在する
+       */
+      kind: "cardPlacement";
+      deck?: Lesson["deck"];
+      discardPile?: Lesson["discardPile"];
+      hand?: Lesson["hand"];
+      removedCardPile?: Lesson["removedCardPile"];
+    }
+  | {
+      /** カードセットの上書き */
+      kind: "cards";
+      cards: Card[];
+    }
+  | {
+      kind: "life";
+      /** アイドルの状態へ実際に影響を与える数値。例えば、残り体力1の時に、トラブルの体力減少で3減らされた時は1になる。 */
+      actual: number;
+      /** アイドルの状態へ本来影響を影響を与えはずだった数値。例えば、残り体力1の時に、トラブルの体力減少で3減らされた時は3になる。 */
+      max: number;
+    }
+  | {
+      /**
+       * 状態修正の差分
+       *
+       * - life や vitality とは異なり、現状使うとこがなさそうなので max は付与していない
+       */
+      kind: "modifier";
+      modifier: Modifier;
+    }
+  | {
+      kind: "remainingTurns";
+      amount: number;
+    }
+  | {
+      kind: "score";
+      /** レッスンなどでパラメータの上限値が決まっている場合に、超過した分を差し引いた実際に上昇した数値 */
+      actual: number;
+      max: number;
+    }
+  | {
+      /** 手札の選択状態 */
+      kind: "selectedCardInHandIndex";
+      index: Lesson["selectedCardInHandIndex"];
+    }
+  | {
+      kind: "turnNumberIncrease";
+    }
+  | {
+      kind: "vitality";
+      actual: number;
+      max: number;
+    };
+
+/**
+ * レッスン更新クエリ
+ *
+ * - TODO: ゲーム内履歴のスキルカード使用時トリガーは、スキルカード使用の子として表現されているので、クエリ上は別レコードにするならそれぞれの関連を表現する必要がある
+ *
+ * - Lesson に対しての1更新を、patch可能なレコードで表現したもの
+ * - スキルカード使用・Pアイテム発動・Pアイテム使用・応援/トラブルなどによる、レッスンの状態変化を表現する
+ * - このクエリを集計して、UIその他の各種機能に利用することもある
+ *   - 具体的には、スキルカード選択時のプレビュー・ゲーム内のレッスン履歴表示・インタラクションやアニメーションなどに利用する
+ */
+export type LessonUpdateQuery = LessonUpdateQueryDiff & {
+  reason: LessonUpdateQueryReason;
+};
+
+/**
+ * レッスン中の状態
+ *
+ * - TODO: 本家の履歴に合わせて差分表現ができるようにする
+ */
+export type LessonGamePlay = {
+  getRandom: GetRandom;
+  idGenerator: IdGenerator;
+  /**
+   * 開始時のレッスン
+   *
+   * - 現在の状態や履歴は、 `updates` を適用して算出する
+   */
+  initialLesson: Lesson;
+  /**
+   * レッスン更新クエリリスト
+   */
+  updates: LessonUpdateQuery[];
 };
