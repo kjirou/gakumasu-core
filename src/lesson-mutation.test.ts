@@ -12,6 +12,7 @@ import {
   addCardsToHandOrDiscardPile,
   calculatePerformingScoreEffect,
   calculatePerformingVitalityEffect,
+  canApplyEffect,
   canUseCard,
   createCardPlacementDiff,
   drawCardsFromDeck,
@@ -785,6 +786,197 @@ describe("canUseCard", () => {
     expect(canUseCard(...args)).toStrictEqual(expected);
   });
 });
+describe("canApplyEffect", () => {
+  const testCases: Array<{
+    args: Parameters<typeof canApplyEffect>;
+    expected: ReturnType<typeof canApplyEffect>;
+    name: string;
+  }> = [
+    {
+      name: "countModifierのfocusを満たす時、trueを返す",
+      args: [
+        {
+          idol: {
+            modifiers: [{ kind: "focus", amount: 3 }] as Idol["modifiers"],
+          },
+        } as Lesson,
+        { kind: "countModifier", modifierKind: "focus", min: 3 },
+      ],
+      expected: true,
+    },
+    {
+      name: "countModifierのfocusを満たさない時、falseを返す",
+      args: [
+        {
+          idol: {
+            modifiers: [{ kind: "focus", amount: 2 }] as Idol["modifiers"],
+          },
+        } as Lesson,
+        { kind: "countModifier", modifierKind: "focus", min: 3 },
+      ],
+      expected: false,
+    },
+    {
+      name: "countModifierのmotivationを満たす時、trueを返す",
+      args: [
+        {
+          idol: {
+            modifiers: [{ kind: "motivation", amount: 3 }] as Idol["modifiers"],
+          },
+        } as Lesson,
+        { kind: "countModifier", modifierKind: "motivation", min: 3 },
+      ],
+      expected: true,
+    },
+    {
+      name: "countModifierのmotivationを満たさない時、falseを返す",
+      args: [
+        {
+          idol: {
+            modifiers: [{ kind: "motivation", amount: 2 }] as Idol["modifiers"],
+          },
+        } as Lesson,
+        { kind: "countModifier", modifierKind: "motivation", min: 3 },
+      ],
+      expected: false,
+    },
+    {
+      name: "countModifierのpositiveImpressionを満たす時、trueを返す",
+      args: [
+        {
+          idol: {
+            modifiers: [
+              { kind: "positiveImpression", amount: 3 },
+            ] as Idol["modifiers"],
+          },
+        } as Lesson,
+        { kind: "countModifier", modifierKind: "positiveImpression", min: 3 },
+      ],
+      expected: true,
+    },
+    {
+      name: "countModifierのpositiveImpressionを満たさない時、falseを返す",
+      args: [
+        {
+          idol: {
+            modifiers: [
+              { kind: "positiveImpression", amount: 2 },
+            ] as Idol["modifiers"],
+          },
+        } as Lesson,
+        { kind: "countModifier", modifierKind: "positiveImpression", min: 3 },
+      ],
+      expected: false,
+    },
+    {
+      name: "countReminingTurnsを満たす時、trueを返す",
+      args: [
+        {
+          turnNumber: 4,
+          lastTurnNumber: 6,
+          remainingTurns: 0,
+        } as Lesson,
+        { kind: "countReminingTurns", max: 3 },
+      ],
+      expected: true,
+    },
+    {
+      name: "countReminingTurnsを満たさない時、falseを返す",
+      args: [
+        {
+          turnNumber: 4,
+          lastTurnNumber: 6,
+          remainingTurns: 0,
+        } as Lesson,
+        { kind: "countReminingTurns", max: 2 },
+      ],
+      expected: false,
+    },
+    {
+      name: "countVitalityを満たす時、trueを返す",
+      args: [
+        {
+          idol: {
+            vitality: 1,
+          },
+        } as Lesson,
+        { kind: "countVitality", range: { min: 1, max: 1 } },
+      ],
+      expected: true,
+    },
+    {
+      name: "countVitalityを満たさない時、falseを返す",
+      args: [
+        {
+          idol: {
+            vitality: 1,
+          },
+        } as Lesson,
+        { kind: "countVitality", range: { min: 2, max: 2 } },
+      ],
+      expected: false,
+    },
+    {
+      name: "hasGoodConditionを満たす時、trueを返す",
+      args: [
+        {
+          idol: {
+            modifiers: [
+              { kind: "goodCondition", duration: 1 },
+            ] as Idol["modifiers"],
+          },
+        } as Lesson,
+        { kind: "hasGoodCondition" },
+      ],
+      expected: true,
+    },
+    {
+      name: "hasGoodConditionを満たさない時、falseを返す",
+      args: [
+        {
+          idol: {
+            modifiers: [{ kind: "focus", amount: 1 }] as Idol["modifiers"],
+          },
+        } as Lesson,
+        { kind: "hasGoodCondition" },
+      ],
+      expected: false,
+    },
+    {
+      name: "measureIfLifeIsEqualGreaterThanHalfを満たす時、trueを返す",
+      args: [
+        {
+          idol: {
+            life: 5,
+            original: {
+              maxLife: 10,
+            },
+          },
+        } as Lesson,
+        { kind: "measureIfLifeIsEqualGreaterThanHalf" },
+      ],
+      expected: true,
+    },
+    {
+      name: "measureIfLifeIsEqualGreaterThanHalfを満たさない時、falseを返す",
+      args: [
+        {
+          idol: {
+            life: 4,
+            original: {
+              maxLife: 10,
+            },
+          },
+        } as Lesson,
+        { kind: "measureIfLifeIsEqualGreaterThanHalf" },
+      ],
+      expected: false,
+    },
+  ];
+  test.each(testCases)("$name", ({ args, expected }) => {
+    expect(canApplyEffect(...args)).toBe(expected);
+  });
+});
 describe("drawCardsOnLessonStart", () => {
   test("山札に引く数が残っている時、山札はその分減り、捨札に変化はない", () => {
     const lessonMock = {
@@ -1290,7 +1482,28 @@ describe("useCard", () => {
       });
     });
   });
-  describe("効果発動", () => {
+  describe("効果発動・効果適用", () => {
+    describe("効果適用条件を満たさない効果は適用されない", () => {
+      test("「飛躍」は、集中が足りない時、パラメータ上昇は1回のみ適用する", () => {
+        const lesson = createLessonForTest({
+          cards: [
+            {
+              id: "a",
+              definition: getCardDataById("hiyaku"),
+              enabled: true,
+              enhanced: false,
+            },
+          ],
+        });
+        lesson.hand = ["a"];
+        const { updates } = useCard(lesson, 1, {
+          selectedCardInHandIndex: 0,
+          getRandom: () => 0,
+          idGenerator: createIdGenerator(),
+        });
+        expect(updates.filter((e) => e.kind === "score")).toHaveLength(1);
+      });
+    });
     describe("drawCards", () => {
       test("「アイドル宣言」を、山札が足りる・手札最大枚数を超えない状況で使った時、手札が2枚増え、捨札は不変で、除外が1枚増える", () => {
         const lesson = createLessonForTest({

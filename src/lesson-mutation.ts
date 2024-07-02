@@ -349,8 +349,8 @@ export const canUseCard = (
   }
 };
 
-/** 各効果が発動できるかを判定する */
-export const canInvokeEffect = (
+/** 各効果が適用できるかを判定する */
+export const canApplyEffect = (
   lesson: Lesson,
   condition: EffectCondition,
 ): boolean => {
@@ -403,6 +403,10 @@ export const canInvokeEffect = (
       );
     }
     case "measureIfLifeIsEqualGreaterThanHalf": {
+      const percentage = Math.floor(
+        (lesson.idol.life * 100) / lesson.idol.original.maxLife,
+      );
+      return percentage >= 50;
     }
     default: {
       const unreachable: never = conditionKind;
@@ -586,6 +590,13 @@ export const calculatePerformingVitalityEffect = (
   };
 };
 
+/**
+ * 効果リストを計算して更新差分リストを返す
+ *
+ * - 1スキルカードや1Pアイテムが持つ効果リストに対して使う
+ * - 本処理内では、レッスンその他の状況は変わらない前提
+ *   - 「お嬢様の晴れ舞台」で、最初に加算される元気は、その後のパラメータ上昇の計算には含まれていない、などのことから
+ */
 const computeEffects = (
   lesson: Lesson,
   effects: Effect[],
@@ -604,7 +615,14 @@ const computeEffects = (
   }
   let diffs: LessonUpdateQueryDiff[] = [];
   for (const effect of effects) {
-    // TODO: 個別の効果発動条件の判定
+    //
+    // 効果別の適用条件判定
+    //
+    if (effect.condition) {
+      if (!canApplyEffect(lesson, effect.condition)) {
+        continue;
+      }
+    }
 
     const effectKind = effect.kind;
     switch (effectKind) {
@@ -860,6 +878,9 @@ const computeEffects = (
   return diffs;
 };
 
+/**
+ * スキルカードを使用する
+ */
 export const useCard = (
   lesson: Lesson,
   historyResultIndex: LessonUpdateQuery["reason"]["historyResultIndex"],
