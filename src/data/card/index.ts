@@ -1,4 +1,4 @@
-import { CardDefinition } from "../../types";
+import { CardDefinition, ProducePlan } from "../../types";
 
 export const findCardDataById = (
   id: CardDefinition["id"],
@@ -13,9 +13,15 @@ export const getCardDataById = (id: CardDefinition["id"]): CardDefinition => {
 };
 
 /** 「ランダムな強化済みスキルカード（SSR）を、手札に生成」用の候補を返す */
-export const filterGeneratableSsrCardsData = () =>
+export const filterGeneratableCardsData = (
+  producePlanKind: ProducePlan["kind"],
+) =>
   cards.filter(
-    (card) => card.cardProviderKind === "others" && card.rarity === "ssr",
+    (card) =>
+      card.cardProviderKind === "others" &&
+      (card.cardPossessionKind === "free" ||
+        card.cardPossessionKind === producePlanKind) &&
+      card.rarity === "ssr",
   );
 
 /**

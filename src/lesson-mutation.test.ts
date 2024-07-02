@@ -1504,6 +1504,51 @@ describe("useCard", () => {
         expect(updates.filter((e) => e.kind === "score")).toHaveLength(1);
       });
     });
+    describe("「次に使用するスキルカードの効果をもう1回発動」が付与されている時", () => {
+      test("コスト消費は1回のみだが、選択したスキルカードの効果を2回発動し、2回目の効果には1回目の状態修正が反映されていて、追加でdoubleEffectを消費する更新を生成する", () => {
+        const lesson = createLessonForTest({
+          cards: [
+            {
+              id: "a",
+              definition: getCardDataById("jumbiundo"),
+              enabled: true,
+              enhanced: false,
+            },
+          ],
+        });
+        lesson.hand = ["a"];
+        lesson.idol.modifiers = [{ kind: "doubleEffect", times: 1 }];
+        const { updates } = useCard(lesson, 1, {
+          selectedCardInHandIndex: 0,
+          getRandom: () => 0,
+          idGenerator: createIdGenerator(),
+        });
+        expect(updates.filter((e) => e.kind === "life")).toHaveLength(1);
+        expect(updates.filter((e) => e.kind === "score")).toHaveLength(2);
+        expect(
+          updates.filter(
+            (e) => e.kind === "modifier" && e.modifier.kind === "focus",
+          ),
+        ).toHaveLength(2);
+        expect(updates.filter((e) => e.kind === "score")[0]).toStrictEqual({
+          kind: "score",
+          actual: 6,
+          max: 6,
+          reason: expect.any(Object),
+        });
+        expect(updates.filter((e) => e.kind === "score")[1]).toStrictEqual({
+          kind: "score",
+          actual: 8,
+          max: 8,
+          reason: expect.any(Object),
+        });
+        expect(
+          updates.filter(
+            (e) => e.kind === "modifier" && e.modifier.kind === "doubleEffect",
+          ),
+        ).toHaveLength(1);
+      });
+    });
     describe("drawCards", () => {
       test("「アイドル宣言」を、山札が足りる・手札最大枚数を超えない状況で使った時、手札が2枚増え、捨札は不変で、除外が1枚増える", () => {
         const lesson = createLessonForTest({

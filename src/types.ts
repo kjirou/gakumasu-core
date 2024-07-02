@@ -22,7 +22,7 @@ export type IdolParameterKind = keyof IdolParameters;
  * - ゲーム上は、出現するカードの種類・レッスンの小目標のパターン・コンテストのAIなど、広範に影響していそう
  * - 関連する原文は、「プロデュースの方向性を示すもので、〜」「〜を活用して育成するプラン」
  */
-type ProducePlan =
+export type ProducePlan =
   | {
       /** 「ロジック」 */
       kind: "logic";

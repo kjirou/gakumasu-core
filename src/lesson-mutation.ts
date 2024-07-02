@@ -16,7 +16,7 @@ import type {
   Modifier,
   VitalityUpdateQuery,
 } from "./types";
-import { filterGeneratableSsrCardsData } from "./data/card";
+import { filterGeneratableCardsData } from "./data/card";
 import {
   calculateActualActionCost,
   calculateActualRemainingTurns,
@@ -716,7 +716,9 @@ const computeEffects = (
         break;
       }
       case "generateCard": {
-        const candidates = filterGeneratableSsrCardsData();
+        const candidates = filterGeneratableCardsData(
+          lesson.idol.original.definition.producePlan.kind,
+        );
         const cardDefinition = candidates[getRandom() * candidates.length];
         const cardInProduction: CardInProduction = {
           id: idGenerator(),
@@ -961,43 +963,72 @@ export const useCard = (
   nextHistoryResultIndex++;
 
   //
-  // TODO: スキルカード再使用分でループ
+  // 「次に使用するスキルカードの効果をもう1回発動」の状態修正を取得
   //
+  const hasDoubleEffect =
+    lesson.idol.modifiers.find((e) => e.kind === "doubleEffect") !== undefined;
 
-  //
-  // 効果発動
-  //
-  const effectUpdates: LessonUpdateQuery[] = computeEffects(
-    newLesson,
-    cardContent.effects,
-    params.getRandom,
-    params.idGenerator,
-  ).map((diff) => ({
-    ...diff,
-    reason: {
-      kind: "cardUsage",
-      cardId: card.id,
-      historyTurnNumber: newLesson.turnNumber,
-      historyResultIndex: nextHistoryResultIndex,
-    },
-  }));
-  newLesson = patchUpdates(newLesson, effectUpdates);
-  nextHistoryResultIndex++;
+  let mergedEffectUpdates: LessonUpdateQuery[] = [];
+  for (
+    let cardUsageIndex = 0;
+    cardUsageIndex <= (hasDoubleEffect ? 1 : 0);
+    cardUsageIndex++
+  ) {
+    //
+    // 効果発動
+    //
+    const effectUpdates: LessonUpdateQuery[] = computeEffects(
+      newLesson,
+      cardContent.effects,
+      params.getRandom,
+      params.idGenerator,
+    ).map((diff) => ({
+      ...diff,
+      reason: {
+        kind: "cardUsage",
+        cardId: card.id,
+        historyTurnNumber: newLesson.turnNumber,
+        historyResultIndex: nextHistoryResultIndex,
+      },
+    }));
 
-  //
-  // TODO: スキルカード使用時トリガー
-  //
+    //
+    // 「次に使用するスキルカードの効果をもう1回発動」を消費
+    //
+    if (hasDoubleEffect && cardUsageIndex === 0) {
+      effectUpdates.push({
+        kind: "modifier",
+        modifier: {
+          kind: "doubleEffect",
+          times: 1,
+        },
+        reason: {
+          kind: "cardUsage",
+          cardId: card.id,
+          historyTurnNumber: newLesson.turnNumber,
+          historyResultIndex: nextHistoryResultIndex,
+        },
+      });
+    }
+    newLesson = patchUpdates(newLesson, effectUpdates);
+    nextHistoryResultIndex++;
+    mergedEffectUpdates = [...mergedEffectUpdates, ...effectUpdates];
 
-  //
-  // TODO: スキルカード使用による状態修正増加時トリガー
-  //
+    //
+    // TODO: スキルカード使用時トリガー
+    //
+
+    //
+    // TODO: スキルカード使用による状態修正増加時トリガー
+    //
+  }
 
   return {
     nextHistoryResultIndex,
     updates: [
       ...discardOrRemovedCardUpdates,
       ...costConsumptionUpdates,
-      ...effectUpdates,
+      ...mergedEffectUpdates,
     ],
   };
 };
